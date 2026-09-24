@@ -98,6 +98,8 @@ def main() -> None:
             primary_key=["run_id"],
             event_time="run_ts",
             partition_key=["campaign"],
+            # online so the surrogate deployment can serve from this view
+            online_enabled=True,
             description="Cheetah quadrupole scan runs (lecture 02 lattice)",
         )
         fg.insert(df)

@@ -29,6 +29,8 @@ import hopsworks
 
 project = hopsworks.login()
 fs = project.get_feature_store()
+from hsfs.builtin_transformations import standard_scaler
+
 runs = fs.get_feature_group("quad_scan_runs", version=1)
 
 query = runs.select(["k1_qf", "k1_qd", "sigma_x_mm", "sigma_y_mm"]).filter(runs.diverged == False)
@@ -36,22 +38,21 @@ query = runs.select(["k1_qf", "k1_qd", "sigma_x_mm", "sigma_y_mm"]).filter(runs.
 fv = fs.get_or_create_feature_view(
     name="quad_surrogate", version=1,
     query=query, labels=["sigma_x_mm", "sigma_y_mm"],
+    transformation_functions=[standard_scaler("k1_qf"), standard_scaler("k1_qd")],
 )
 X_train, X_test, y_train, y_test = fv.train_test_split(test_size=0.2)
 ```
 
-The filter lives in the view. Anyone who reads `quad_surrogate` v1 gets the same rows, including the runs added after it was created.
+The filter and the scaling live in the view. The scaler learns its mean and deviation from this training data only, and the deployment applies the same numbers. Anyone who reads `quad_surrogate` v1 gets the same rows, including the runs added after it was created.
 
 ## Surrogate
 
 ```python
 from sklearn.neural_network import MLPRegressor
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
 import joblib, os
 
-surrogate = make_pipeline(StandardScaler(), MLPRegressor((128, 128, 128), max_iter=2000))
+surrogate = MLPRegressor(hidden_layer_sizes=(128, 128, 128), max_iter=2000)
 surrogate.fit(X_train, y_train)
 r2 = r2_score(y_test, surrogate.predict(X_test))
 
