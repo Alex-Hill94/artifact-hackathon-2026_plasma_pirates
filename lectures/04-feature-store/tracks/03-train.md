@@ -66,6 +66,8 @@ joblib.dump(model, "model/model.pkl")
 
 `HistGradientBoostingClassifier` takes the NaNs in this data as they are.
 
+Expect a test AUC of 1.000. The physics features are computed over the whole buffer, trip included: they describe a fault that already happened. The stretch below asks the harder question.
+
 ## Register
 
 ```python

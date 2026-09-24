@@ -49,6 +49,7 @@ Same call on a real event, a September 2025 RF regulation fault:
 
 ```python
 deployment.predict(inputs=[{"event_id": "cma07_cav1_20250903T131227"}])
+# {'predictions': [1]}
 ```
 
 Training read `llrf_physics` offline, from Hudi, as it was on each label's date. Serving reads the same features online, from RonDB, as they are now. One definition, two stores, no skew.

@@ -47,13 +47,13 @@ physics.insert(pd.read_parquet("data/llrf/physics.parquet"))
 
 labels = fs.get_or_create_feature_group(
     name="llrf_labels", version=1,
-    primary_key=["event_id"], event_time="event_ts",
+    primary_key=["event_id"], event_time="event_ts", online_enabled=True,
     description="Fault labels from the GANIL post-mortem classifier",
 )
 labels.insert(pd.read_parquet("data/llrf/labels.parquet"))
 ```
 
-Labels live in their own group. Features are known at trip time; the label comes later, from the post-mortem analysis. Keeping them apart is what makes the point-in-time join in track 03 honest.
+Labels live in their own group. Features are known at trip time; the label comes later, from the post-mortem analysis. Keeping them apart is what makes the point-in-time join in track 03 honest. All three groups are online: serving a feature view needs every group in it online, the label group included.
 
 ## 3. Look
 
