@@ -8,13 +8,13 @@ Writes to --out (default ./llrf):
     events.parquet     one row per event: keys, cavity, LLRF settings from the file header,
                        synthetic=False (generators/llrf_stream.py writes synthetic=True rows)
     physics.parquet    42 physics and status features (decay, detuning, microphonics, power flow)
-    stats.parquet      260 whole-signal statistics, 17 per channel
+    stats.parquet      260 whole-buffer statistics per signal
     precursor.parquet  501 pre-trigger features (trends, CUSUM, segments)
     labels.parquet     binary label, fault category, RF-regulation subtype
 
 Every table carries event_id (primary key), cavity_id and event_ts (event time).
-The ALM header field is left out on purpose: it is set by the interlock that recorded the
-fault, so it leaks the label.
+The ALM header field is left out on purpose: it is the hardware fault register the
+labels are decoded from (the authors' Classify_PostMortemFile), so it is the label.
 
     python prepare_llrf.py --out ./llrf
 """
@@ -80,13 +80,15 @@ def events_table(metadata: list[dict]) -> pd.DataFrame:
         "kiuci": h["KIUCI"].astype(float),
         "ampt": h["AMPT"].astype(float),
         "phit": h["PHIT"].astype(float),
+        # BEAM is the feed-forward on/off flag per the authors, not beam presence.
+        # feed_forward_enabled in physics is constant 1, so this is the only one that varies.
         "beam_flag": h["BEAM"].eq("OUI"),
         "cavite": h["CAVITE"].str.removeprefix("CAVITE_"),
         "mask": h["MASK"],
         "synthetic": False,
     })
     ev.insert(0, "event_id", ev["cavity_id"].str.lower() + "_" + ts.dt.strftime("%Y%m%dT%H%M%S"))
-    # real events are their own source; replayed ones point at the real event they copy
+    # real events are their own source; synthetic ones point at the real event they copy
     ev["source_event_id"] = ev["event_id"]
     if ev["event_id"].duplicated().any():
         raise SystemExit("event_id is not unique, check the source release")

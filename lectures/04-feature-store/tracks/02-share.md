@@ -4,7 +4,7 @@
 
 ## Read the organisers' store
 
-The organisers load the full LLRF release (all five tables) into the project `<DATA_PROJECT>` and share its feature store with every team project.
+The organisers load the full LLRF release (all five tables) into the project `aissai_llrf` and share its feature store with every team project.
 
 ```bash
 hops fg list        # the STORE column shows where each feature group lives
@@ -14,7 +14,7 @@ hops fg list        # the STORE column shows where each feature group lives
 import hopsworks
 
 project = hopsworks.login()
-shared = project.get_feature_store(name="<DATA_PROJECT>_featurestore")
+shared = project.get_feature_store(name="aissai_llrf_featurestore")
 
 precursor = shared.get_feature_group("llrf_precursor", version=1)
 precursor.read().shape      # (2865, 504)

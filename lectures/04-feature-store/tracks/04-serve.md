@@ -19,17 +19,33 @@ hops job list
 
 ## Deploy
 
-The model is registered with its feature view, so the default predictor does the rest: take an `event_id`, look up the feature vector in the online store, predict.
+The model is registered with its feature view, so a short predictor script does the rest: take an `event_id`, look up the feature vector in the online store, predict. Save it as `predictor.py`:
 
 ```python
+import os
+import joblib
+
+
+class Predictor:
+    def __init__(self, model):
+        self.model = joblib.load(os.path.join(os.environ["MODEL_FILES_PATH"], "model.pkl"))
+        # In a deployment this also initialises online lookups for the feature view.
+        self.fv = model.get_feature_view()
+
+    def predict(self, inputs):
+        return self.model.predict(self.fv.get_feature_vectors(entry=inputs, return_type="pandas")).tolist()
+```
+
+```python
+import os
 import hopsworks
 
 project = hopsworks.login()
 mr = project.get_model_registry()
 entry = mr.get_model("llrf_fault", version=1)
 
-deployment = entry.deploy(name="llrffault")
-deployment.schema.describe()
+uploaded = project.get_dataset_api().upload("predictor.py", "Resources", overwrite=True)
+deployment = entry.deploy(name="llrffault", script_file=os.path.join("/Projects", project.name, uploaded))
 deployment.start(await_running=600)
 ```
 
@@ -45,14 +61,14 @@ live_id = "syn_cma07_cav1_..."          # copy one from the generator output
 deployment.predict(inputs=[{"event_id": live_id}])
 ```
 
-Same call on a real event, a September 2025 RF regulation fault:
+Same call on a real event, a September 2025 fault (Absence autorisation RF, RF authorization absent):
 
 ```python
-deployment.predict(inputs=[{"event_id": "cma07_cav1_20250903T131227"}])
+deployment.predict(inputs=[{"event_id": "cma07_cav1_20250904T151333"}])
 # {'predictions': [1]}
 ```
 
-Training read `llrf_physics` offline, from Hudi, as it was on each label's date. Serving reads the same features online, from RonDB, as they are now. One definition, two stores, no skew.
+Training read `llrf_physics` offline, from Delta, as it was on each label's date. Serving reads the same features online, from RonDB, as they are now. One definition, two stores, no skew.
 
 Check against the truth: `source_event_id` tells you which real event a synthetic one copies, and `llrf_labels` holds its label.
 

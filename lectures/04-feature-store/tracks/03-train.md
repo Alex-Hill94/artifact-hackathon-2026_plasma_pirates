@@ -66,7 +66,7 @@ joblib.dump(model, "model/model.pkl")
 
 `HistGradientBoostingClassifier` takes the NaNs in this data as they are.
 
-Expect a test AUC of 1.000. The physics features are computed over the whole buffer, trip included: they describe a fault that already happened. The stretch below asks the harder question.
+Expect a test AUC of 1.000. The physics features are computed over the whole buffer, interlock trip included: on fault events they describe a fault that already happened. The stretch below asks the harder question.
 
 ## Register
 
@@ -89,5 +89,5 @@ The model now points at the feature view and the rows it trained on. Six months 
 
 ## Stretch
 
-- Swap physics for `llrf_precursor` (from the shared store) and compare the AUC. The gap is the difference between describing a trip and seeing it coming.
+- Swap physics for `llrf_precursor` (from the shared store) and compare the AUC. The gap is the difference between describing a fault and seeing it coming.
 - Root cause: a second view over faults only, label `fault_category`.

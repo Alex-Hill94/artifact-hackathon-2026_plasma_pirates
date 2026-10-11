@@ -9,7 +9,7 @@ Feature, training and inference pipelines: three independent programs sharing on
 
 ## Slides
 
-[slides.hops.io/aissai26](https://slides.hops.io/aissai26). Arrow keys to move, `O` for the overview, `L` copies the link to the current slide. `?doc` renders the whole deck as one page.
+[slides.hops.io/2026-10/aissai26](https://slides.hops.io/2026-10/aissai26/). Arrow keys to move, `O` for the overview, `L` copies the link to the current slide. `?doc` renders the whole deck as one page.
 
 ## Tracks
 

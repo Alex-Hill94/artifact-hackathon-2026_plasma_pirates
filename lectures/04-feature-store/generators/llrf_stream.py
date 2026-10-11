@@ -1,4 +1,4 @@
-"""Replay SPIRAL2 LLRF events as a live stream, resampled from the real release.
+"""Stream synthetic SPIRAL2 LLRF events, each a copy of a real event from the release.
 
 Each emitted event copies the header and physics features of a real event from the same
 cavity and class, gets a fresh event_id and event_ts, and carries synthetic=True plus the
@@ -7,7 +7,7 @@ come from the 2019-2025 data.
 
 Events land in the same feature groups as the historical data (llrf_events, llrf_physics),
 so the feature view built on them serves live events with no extra plumbing. Labels are
-not emitted: in operation the fault category arrives later, from the post-mortem analysis.
+not emitted: source_event_id leads to the copied event's label in llrf_labels.
 
     # print 3 events as JSON
     python llrf_stream.py --data ../data/llrf --n 3

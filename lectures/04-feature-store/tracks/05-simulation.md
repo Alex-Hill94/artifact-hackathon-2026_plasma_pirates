@@ -43,6 +43,8 @@ fv = fs.get_or_create_feature_view(
 X_train, X_test, y_train, y_test = fv.train_test_split(test_size=0.2)
 ```
 
+The offline copy of an online group lands a minute or two after the insert. If `train_test_split` fails with "Could not read data using Hopsworks Query Service", wait and run it again.
+
 The filter and the scaling live in the view. The scaler learns its mean and deviation from this training data only, and the deployment applies the same numbers. Anyone who reads `quad_surrogate` v1 gets the same rows, including the runs added after it was created.
 
 ## Surrogate
@@ -70,9 +72,30 @@ The notebook 03 PyTorch MLP works too: register it with `mr.torch.create_model` 
 
 ## Optimise against the deployment
 
+A Python model is served by a predictor script. Save this as `predictor.py`: it takes the two strengths, applies the view's scaler with the statistics of the training data, and predicts.
+
 ```python
+import os
+import joblib
+import pandas as pd
+
+
+class Predictor:
+    def __init__(self, model):
+        self.model = joblib.load(os.path.join(os.environ["MODEL_FILES_PATH"], "model.pkl"))
+        # In a deployment this also loads the scaler statistics from the training data.
+        self.fv = model.get_feature_view()
+
+    def predict(self, inputs):
+        return self.model.predict(self.fv.transform(pd.DataFrame(inputs))).tolist()
+```
+
+```python
+import os
+
 entry = project.get_model_registry().get_model("quad_surrogate", version=1)
-deployment = entry.deploy(name="quadsurrogate", passed_features=["k1_qf", "k1_qd"])
+uploaded = project.get_dataset_api().upload("predictor.py", "Resources", overwrite=True)
+deployment = entry.deploy(name="quadsurrogate", script_file=os.path.join("/Projects", project.name, uploaded))
 deployment.start(await_running=600)
 
 from skopt import gp_minimize
