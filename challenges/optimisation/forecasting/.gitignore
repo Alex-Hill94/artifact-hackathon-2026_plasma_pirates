@@ -1,0 +1,11 @@
+# data you download or make yourself, and your predictions
+data/raw/
+data/tables/
+predictions/
+
+# Python environment made by setup_venv.sh, and files Python and Jupyter create
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
