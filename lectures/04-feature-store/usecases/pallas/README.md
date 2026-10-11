@@ -69,7 +69,7 @@ python feature_pipeline.py --out pallas_fg
 python training_pipeline.py --local pallas_fg --models models
 python inference_pipeline.py --local models/pallas_direct_b/model.pkl --fg-dir pallas_fg --target-mev 200 --min-charge-pc 20
 
-# cluster: write from the project terminal or as a job (see SDK-ISSUES 8 for laptop writes)
+# cluster: write from the project terminal or as a job
 hops job deploy pallas_features feature_pipeline.py --args "--insert" --run --wait
 python feature_pipeline.py --insert
 python feature_pipeline.py --insert --only pallas_b_trajectories   # write one group again
@@ -133,7 +133,7 @@ On 2026-10-10, Hopsworks 5.1.1, project `aissai26_pallas`, client from the same 
 
 Feature pipeline, run as a Python job inside the cluster (`hops job deploy pallas_features feature_pipeline.py --args "--insert" --run --wait`, default environment): the job read the pack from GitHub over HTTPS and wrote the four groups, 6 s each, 59 s for the whole job. Read back: A 1,307 rows with 1,080 injected, B 529 with 286, trajectories 31,866, moments 21,160. `spec_common` is stored as `array<double>`.
 
-Writes run from the project terminal or a job. From a laptop on a lossy line they are slow and can fail (`../../SDK-ISSUES.md` issue 8), and a write interrupted midway leaves the group unreadable until it is deleted and recreated (issue 9).
+Writes run from the project terminal or a job. From a laptop on a lossy line they are slow and can fail, and a write interrupted midway leaves the group unreadable until it is deleted and recreated.
 
 Training pipeline: feature views `pallas_direct_b` v1 and `pallas_inverse_a` v1 created, models `pallas_direct_b` v1 and `pallas_inverse_a` v1 registered with their views. The views return the same rows as the local run (282 and 726 after dropping NaN) and the R² is identical to the local numbers above: `r2_e_med_mev` 0.9891, `r2_de_mad` 0.8054, `r2_q_end` 0.9945; `r2_p_1` 0.9273, `r2_a_0` 0.772, `r2_c_n2` 0.8854. Training and registering both models from the laptop took 136 s.
 
@@ -158,9 +158,9 @@ The first search ends at a different point from the local one (192.0 MeV, loss 0
 
 Client behaviour found on the way, handled in the code:
 
-- `fv.training_data(primary_key=True)` returns the key as `<project>_<feature group>_<version>_config`, not `config` (SDK-ISSUES 6). The training pipeline renames it back.
-- `mr.get_model(name)` without a version returns version 1, not the latest (SDK-ISSUES 10). The inference pipeline takes the version with the best `r2_mean` unless `--model-version` is given.
-- `Model.deploy` in 5.1.1 has no `model_server` argument (SDK-ISSUES 5); a Python model with `script_file` gets the Python server.
+- `fv.training_data(primary_key=True)` returns the key as `<project>_<feature group>_<version>_config`, not `config`. The training pipeline renames it back.
+- `mr.get_model(name)` without a version returns version 1, not the latest. The inference pipeline takes the version with the best `r2_mean` unless `--model-version` is given.
+- `Model.deploy` in 5.1.1 has no `model_server` argument; a Python model with `script_file` gets the Python server.
 
 ## Not verified
 

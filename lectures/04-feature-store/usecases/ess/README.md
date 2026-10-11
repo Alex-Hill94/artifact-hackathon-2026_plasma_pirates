@@ -94,7 +94,7 @@ python inference_pipeline.py --follow            # deploys on first run, prints 
 python inference_pipeline.py --key 16096686207:16096686195
 ```
 
-The generator and the loop run side by side as two clients of the same user. Give each its own certificate folder (`export HOPSWORKS_CERT_FOLDER=$(mktemp -d)` per terminal), or the first to exit deletes the other's certificates (`../../SDK-ISSUES.md`, issue 1).
+The generator and the loop run side by side as two clients of the same user. Give each its own certificate folder (`export HOPSWORKS_CERT_FOLDER=$(mktemp -d)` per terminal), or the first to exit deletes the other's certificates.
 
 `notebook.ipynb` walks the same steps locally, cluster calls shown as code blocks.
 
