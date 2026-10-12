@@ -81,4 +81,4 @@ Docs for agents, over MCP: `https://mcp.hopsworks.ai/mcp`.
 claude mcp add --transport http hopsworks-docs -s user https://mcp.hopsworks.ai/mcp
 ```
 
-In the cluster terminal the skills are already installed for `claude` and `codex`, and `hops skills list` prints them.
+In the cluster terminal the skills are already installed for `claude` and `codex`.
