@@ -72,8 +72,6 @@ From outside, the cluster answers on the web port and on the query service only.
 Any agent that can run a shell can drive Hopsworks through `hops`. Add `--json` to any command for machine-readable output.
 
 ```bash
-hops skills list            # playbooks for feature groups, views, training, serving
-hops skills show hops-fg    # print one; paste it into any agent
 hops init --dir .           # Claude Code: installs the hops skill and allows Bash(hops *)
 ```
 
@@ -83,4 +81,4 @@ Docs for agents, over MCP: `https://mcp.hopsworks.ai/mcp`.
 claude mcp add --transport http hopsworks-docs -s user https://mcp.hopsworks.ai/mcp
 ```
 
-In the cluster terminal the skills are already installed for `claude` and `codex`.
+In the cluster terminal the skills are already installed for `claude` and `codex`, and `hops skills list` prints them.
