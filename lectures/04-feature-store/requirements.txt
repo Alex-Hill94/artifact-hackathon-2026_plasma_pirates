@@ -6,6 +6,7 @@ numpy>=1.26
 scikit-learn==1.8.*   # match the serving image, models are unpickled there
 scikit-optimize>=0.10
 joblib
-# track 05 only
+# not installed by default: the ESS autoencoder (usecases/ess) needs torch,
+# the Cheetah draft (usecases/clara) needs cheetah-accelerator; their READMEs give the line
 # torch>=2.2
 # cheetah-accelerator>=0.7

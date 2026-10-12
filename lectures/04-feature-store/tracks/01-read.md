@@ -4,8 +4,8 @@ Everyone, 10 minutes, from your laptop. The full challenge datasets are in three
 
 | Project | Feature group | Rows | One row is |
 |---|---|---|---|
-| `m4cast_ess` | `ess_llrf_waveforms` | 58,458 | a cycle of an RF chain, I and Q at 256 points |
-| | `ess_sds_channel_stats` | 548,194 | a channel of a cycle, full-resolution statistics |
+| `m4cast_ess` | `ess_llrf_waveforms` | 52,842 | a cycle of an RF chain, I and Q at 256 points |
+| | `ess_sds_channel_stats` | 497,659 | a channel of a cycle, full-resolution statistics |
 | `m4cast_clara` | `clara_camera_captures` | 225,421 | a camera capture: spot moments, magnet settings |
 | | `clara_camera_files` | 17,878 | a burst at fixed settings, with a thumbnail |
 | `m4cast_pallas` | `pallas_campaign_a` | 13,073 | a Smilei simulation, scan A |
@@ -26,7 +26,7 @@ hops fg preview ess_llrf_waveforms --n 3 --columns event_id,cycle_id,pv_base,bea
 ```
 event_id     cycle_id     pv_base                                    beam_mode  in_sample
 -----------  -----------  -----------------------------------------  ---------  ---------
-15642507892  15642507330  HBL-010RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData  Probe      False
+15642663250  15642663248  MBL-010RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData  Probe      False
 ```
 
 ## From Python
@@ -37,7 +37,7 @@ import hopsworks
 project = hopsworks.login(project="m4cast_ess")
 fs = project.get_feature_store()
 waves = fs.get_feature_group("ess_llrf_waveforms", version=1).read()
-waves.shape     # (58458, 24), about 8 s
+waves.shape     # (52842, 24), about 4 s
 ```
 
 The same three lines read CLARA and PALLAS: change the project and the name.
@@ -45,7 +45,7 @@ The same three lines read CLARA and PALLAS: change the project and the name.
 | Read | Time from a laptop |
 |---|---|
 | `m4cast_pallas.pallas_b_trajectories` | 3 s |
-| `m4cast_ess.ess_llrf_waveforms` | 5 to 8 s |
+| `m4cast_ess.ess_llrf_waveforms` | 4 s |
 | `m4cast_clara.clara_camera_captures` (193 columns) | 11 to 20 s |
 | `m4cast_clara.clara_camera_files` (a thumbnail per row) | 2 min |
 

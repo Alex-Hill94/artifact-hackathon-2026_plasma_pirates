@@ -32,7 +32,7 @@ Then your challenge: `usecases/` holds a feature, a training and an inference pi
 ├── tracks/                 00 to 04, and own_project.py (tracks 03 and 04 in one script)
 ├── usecases/ess/           anomaly detection: waveform features, IsolationForest, scoring by key
 ├── usecases/clara/         optimisation: Cheetah captures, surrogate, optimiser on the deployment
-├── usecases/clara-camera/  optimisation: real camera captures from the CC-IN2P3 archive
+├── usecases/clara-camera/  optimisation: real camera captures, surrogate, optimiser checked on real bursts
 ├── usecases/pallas/        surrogate models: the Smilei pack, two surrogates, a search
 ├── data/, generators/      SPIRAL2 LLRF release and stream, used by the lecture's concept slides
 └── requirements.txt        the Hopsworks client the tracks were tested with

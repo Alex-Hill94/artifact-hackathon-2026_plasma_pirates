@@ -45,9 +45,9 @@ Each use case folder holds the same three pipelines on its own data:
 
 | Folder | Feature pipeline | Training pipeline | Inference pipeline |
 |---|---|---|---|
-| `usecases/ess` | cycles and waveform features | IsolationForest | scores new cycles by key |
+| `usecases/ess` | waveform features of every cycle and chain | IsolationForest, the challenge autoencoder | scores cycles by key |
 | `usecases/clara` | Cheetah captures | MLP surrogate | Bayesian optimisation on the deployment |
-| `usecases/clara-camera` | real camera captures | | |
+| `usecases/clara-camera` | real camera captures | extra trees surrogate | optimiser on the deployment, checked on real bursts |
 | `usecases/pallas` | the Smilei pack | Gaussian process, gradient boosting | search for a target beam |
 
 `usecases/pallas` runs on the full data as it is. In the terminal of your own project, after `training_pipeline.py --store m4cast_pallas_featurestore`:
@@ -66,6 +66,6 @@ x_of         889.6666
 predicted: E_med 204.6 MeV, dE_mad 0.034, q_end 66.9 pC (loss 0.0347)
 ```
 
-It deploys the direct surrogate as `pallasdirectb` and lets an optimiser call it 60 times, about seven and a half minutes in all. Stop the deployment afterwards: `hops deployment stop pallasdirectb`.
+It deploys the direct surrogate as `pallasdirectb` and lets an optimiser call it 60 times, about seven and a half minutes in all. The proposal depends on the machine that runs the optimiser: the same search from a laptop on the same deployment gave 191.0 MeV and 55.3 pC (loss 0.0303) in 19 s. Campaign B already holds real runs with a lower loss than the proposal above, for example config 5746 at 204.4 MeV and 64.7 pC (0.0318). Stop the deployment afterwards: `hops deployment stop pallasdirectb`.
 
-The ESS and CLARA pipelines were written on the public samples: on the real feature groups the ESS key gains `pv_base`, and the CLARA rows are camera captures instead of simulated ones.
+`usecases/ess` and `usecases/clara-camera` run on the real feature groups the same way, from a project of your own; each README gives the commands and the results. `usecases/clara` is the earlier draft on Cheetah simulations.
