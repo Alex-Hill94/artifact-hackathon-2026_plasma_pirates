@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# HSDS: the POSIX object store and the runtime state written by scripts/
+hsds_data/
+hsds_run/
+.hscfg
+
+# Local configuration
+.env
+
+# Locally built indexes
+*.h5
+sample/

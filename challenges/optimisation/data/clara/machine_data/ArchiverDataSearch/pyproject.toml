@@ -1,0 +1,36 @@
+[project]
+name = "archiver-search"
+version = "0.1.0"
+description = "Search and filter CLARA image metadata stored in HSDS"
+requires-python = ">=3.11"
+dependencies = [
+    "h5py>=3.10",
+    "h5pyd>=0.18",
+    "numpy>=1.26",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+    "python-dateutil>=2.9",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+server = ["hsds>=0.8"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
+
+[project.scripts]
+archiver-ingest = "archiver_search.ingest:main"
+archiver-api = "archiver_search.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["archiver_search"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["hsds: requires a live HSDS endpoint (set HSDS_ENDPOINT)"]
+filterwarnings = ["ignore::DeprecationWarning"]

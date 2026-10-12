@@ -1,0 +1,172 @@
+:root {
+  --bg: #11151c;
+  --panel: #171d26;
+  --panel-2: #1e2633;
+  --line: #2b3542;
+  --ink: #e6ebf2;
+  --muted: #8c9aad;
+  --accent: #4f9cf9;
+  --accent-ink: #06121f;
+  --danger: #ff6b6b;
+  --radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+
+main {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  height: calc(100vh - 49px);
+}
+
+#rail {
+  overflow-y: auto;
+  padding: 16px;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+#rail section { margin-bottom: 22px; }
+#rail h2 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+
+.field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.field label { font-size: 12px; color: var(--muted); }
+
+/* Date carries the width; the time beside it is optional and reads as such. */
+.datetime { display: flex; gap: 6px; }
+.datetime input[type="date"] { flex: 3 1 0; min-width: 0; }
+.datetime input[type="time"] { flex: 2 1 0; min-width: 0; }
+.field.incomplete .datetime input[type="date"] { border-color: #d3a24a; }
+
+input, select, button {
+  font: inherit;
+  color: var(--ink);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+button { cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+button.secondary:hover { background: var(--line); }
+button.link { background: none; border: none; color: var(--accent); padding: 0; text-decoration: underline; }
+
+.checklist { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+.checklist label { display: flex; align-items: center; gap: 7px; font-size: 13px; }
+.checklist .area-head { color: var(--muted); font-size: 11px; margin-top: 6px; }
+.checklist input[type=checkbox] { accent-color: var(--accent); }
+
+.filter-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px;
+  padding: 8px;
+  margin-bottom: 7px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.filter-row .pv { grid-column: 1 / -1; }
+.filter-row .values { display: flex; gap: 5px; grid-column: 1 / 2; }
+.filter-row .values input { width: 100%; min-width: 0; }
+.filter-row .hint { grid-column: 1 / -1; font-size: 11px; color: var(--muted); }
+.filter-row .remove { color: var(--danger); background: none; border: none; }
+
+.row-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rail-actions { display: flex; gap: 8px; }
+.rail-actions button { flex: 1; }
+
+label.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 2px 6px 2px 10px; font-size: 12px;
+}
+.chip button { background: none; border: none; color: var(--muted); padding: 0 2px; }
+.chip button:hover { color: var(--danger); }
+
+#content { display: flex; flex-direction: column; min-width: 0; }
+
+.tabs {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
+}
+.tabs .spacer { flex: 1; }
+.tab { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); }
+.tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+.panel { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px; overflow: hidden; }
+.panel.hidden, .hidden { display: none; }
+
+.table-wrap { flex: 1; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--panel-2); z-index: 1; font-weight: 600; font-size: 12px; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--accent); }
+tbody tr:hover { background: var(--panel-2); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.path { max-width: 460px; overflow: hidden; text-overflow: ellipsis; text-align: left; }
+
+.pager { display: flex; align-items: center; gap: 10px; padding-top: 10px; }
+.pager #page-info { color: var(--muted); font-size: 13px; }
+
+.error {
+  background: #3a1d22; border: 1px solid var(--danger); color: #ffc9c9;
+  padding: 8px 10px; border-radius: var(--radius); margin-bottom: 10px;
+}
+/* An ignored-input notice, not a failure: same box, calmer colours. */
+.error.warn { background: #3a3220; border-color: #d3a24a; color: #f4dfb4; }
+
+.filter-row.incomplete { border-color: #d3a24a; }
+
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+.plot-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+#plot { flex: 1; min-height: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 8px; font-size: 12px; }
+.legend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+
+dialog {
+  background: var(--panel); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px;
+  max-width: 900px; width: 90vw; max-height: 85vh;
+}
+dialog::backdrop { background: rgba(0, 0, 0, .6); }
+#row-body { max-height: 60vh; overflow: auto; margin-bottom: 12px; }
+#row-body table { font-size: 12px; }
+
+figure.capture { margin: 0 0 12px; }
+figure.capture img {
+  display: block; max-width: 100%; height: auto;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+}
+figure.capture figcaption { padding-top: 4px; }
+.uplot { color: var(--ink); }
