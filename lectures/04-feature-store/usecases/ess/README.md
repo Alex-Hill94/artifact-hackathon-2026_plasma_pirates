@@ -51,6 +51,7 @@ pulse cut short     14       14
 ```
 
 - **RF off**: 269 rows with almost no amplitude. They are exactly the rows with `trig_code` 14.
+- So `trig_code` is tempting as a label, and it is not one. Code 14 is the RF being off (three cavities, in trips and in nominal snapshots alike), and in the public sample it is cavity `MBL-090` and nothing else. A model trained on it learns which cavity it is looking at.
 - **Pulse cut short**: 14 rows whose flat-top stops after 13 to 17 samples. Ten are the same cycle, `16122596526`, on ten chains.
 - Autoencoder on all rows: holdout MSE 0.0136. The challenge's bar, trained on the 168 sample rows, is 0.0194.
 

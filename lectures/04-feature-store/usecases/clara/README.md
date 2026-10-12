@@ -91,5 +91,6 @@ The cluster split and fit differ from the laptop run. Here the optimiser pushed 
 
 ## Notes
 
+- Two beam energies live in this use case. `utils.py` converts S04 currents at 180 MeV, and the kickoff notebook brings the beam into S04 at 193 MeV. `clara.py` keeps the 180, which is what `utils.update_cheetah_element` converts with. Convert currents yourself at 193 and your quads come out about 7% weaker than the ones the simulation applies.
 - The notebook's `LOCAL = False` path calls the same functions as the three programs but was not run as a notebook.
 - `Model.deploy` in `hopsworks` 5.1.1 has no `passed_features` and requires `script_file` for Python models, which is why this use case ships `predictor.py`.
