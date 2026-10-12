@@ -66,6 +66,6 @@ x_of         889.6666
 predicted: E_med 204.6 MeV, dE_mad 0.034, q_end 66.9 pC (loss 0.0347)
 ```
 
-It deploys the direct surrogate as `pallasdirectb` and lets an optimiser call it 60 times, about seven and a half minutes in all. The proposal depends on the machine that runs the optimiser: the same search from a laptop on the same deployment gave 191.0 MeV and 55.3 pC (loss 0.0303) in 19 s. Campaign B already holds real runs with a lower loss than the proposal above, for example config 5746 at 204.4 MeV and 64.7 pC (0.0318). Stop the deployment afterwards: `hops deployment stop pallasdirectb`.
+It deploys the direct surrogate as `pallasdirectb` and lets an optimiser call it 60 times, about seven and a half minutes in all. The proposal changes with the machine that runs the optimiser, and campaign B already holds real runs with a lower loss (config 5746, 0.0318). Stop the deployment afterwards: `hops deployment stop pallasdirectb`.
 
 `usecases/ess` and `usecases/clara-camera` run on the real feature groups the same way, from a project of your own; each README gives the commands and the results. `usecases/clara` is the earlier draft on Cheetah simulations.

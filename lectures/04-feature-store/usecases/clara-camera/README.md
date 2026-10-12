@@ -164,10 +164,9 @@ deployment.predict(inputs=[{"cla_s02_mag_quad_01_seti": 2.005, "cla_s02_mag_quad
 ## Where each step runs
 
 - Reads, the feature view, training data, training and the model registry: from a laptop.
-- `feature_pipeline.py --insert`: from the terminal of your project (2,030 rows in 4 to 5 s) and as a Python job inside the cluster. From a laptop on the VPN the same insert failed twice on the HopsFS connection.
-- `inference_pipeline.py`: from the project terminal, with model v3, after `uv pip install scikit-optimize` (without it: `ModuleNotFoundError: No module named 'skopt'`). Also from a laptop on the VPN, three rounds, same numbers.
-- From a new terminal session and a fresh clone of the branch (the clone takes 36 s): `uv pip install -r ../../requirements.txt` adds `scikit-optimize` 0.10.2 in 7 s, the insert writes 2,030 rows in 5 s, and `inference_pipeline.py` takes 1 min 35 s with the deployment stopped at the start. Same proposal: 1090 µm predicted, 1109 µm at the nearest burst.
-- Found on the way: the query service loads only the columns a query selects. A view that filters on a helper column must be read with `training_helper_columns=True`, or the read fails with `Binder Error: ... does not have a column named "background"`.
+- `feature_pipeline.py --insert`: from the terminal of your project (2,030 rows in 4 to 5 s) or as a Python job. From a laptop the insert fails on the HopsFS connection.
+- `inference_pipeline.py`: from the terminal of your project, after `uv pip install -r ../../requirements.txt` (without it: `ModuleNotFoundError: No module named 'skopt'`).
+- The query service loads only the columns a query selects. A view that filters on a helper column must be read with `training_helper_columns=True`, or the read fails with `Binder Error: ... does not have a column named "background"`.
 
 ## From the raw archive: `camera_pipeline.py`
 

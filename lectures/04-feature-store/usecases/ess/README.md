@@ -107,8 +107,6 @@ python training_pipeline.py --only ess_llrf_autoencoder --strict
 
 ## Results
 
-Hopsworks 5.1.1, scikit-learn 1.8, torch 2.14, Python 3.11, in a project of your own with `m4cast_ess_featurestore` shared read-only. The anomaly model was trained before the real groups were re-ingested without duplicate keys on 2026-10-12; the rows themselves did not change.
-
 ### Feature pipeline
 
 ```

@@ -238,36 +238,7 @@ For scale, the closest real simulation in the sample is config 5746: 204 MeV, `d
 
 `notebook.ipynb` gives the same outputs.
 
-## Results on a cluster with the public sample
-
-Hopsworks 5.1.1. These numbers are from the sample.
-
-Feature pipeline, run as a Python job inside the cluster (`hops job deploy pallas_features feature_pipeline.py --args "--insert" --run --wait`, default environment): the job read the pack from GitHub over HTTPS and wrote the four groups, 6 s each, 59 s for the whole job. Read back: A 1,307 rows with 1,080 injected, B 529 with 286, trajectories 31,866, moments 21,160. `spec_common` is stored as `array<double>`.
-
-Writes run from the project terminal or a job. From a laptop on a lossy line they are slow and can fail, and a write interrupted midway leaves the group unreadable until it is deleted and recreated.
-
-Training pipeline: feature views `pallas_direct_b` v1 and `pallas_inverse_a` v1 created, models `pallas_direct_b` v1 and `pallas_inverse_a` v1 registered with their views. The views return the same rows as the local run (282 and 726 after dropping NaN) and the R² is identical to the local numbers above: `r2_e_med_mev` 0.9891, `r2_de_mad` 0.8054, `r2_q_end` 0.9945; `r2_p_1` 0.9273, `r2_a_0` 0.772, `r2_c_n2` 0.8854. Training and registering both models from the laptop took 136 s.
-
-Inference pipeline, from a laptop on the cluster's network: deployment `pallasdirectb` created with `predictor.py` on the default Python environment, running after 34 s, whole first run 66 s. scikit-learn 1.8 unpickled the model there. A raw request:
-
-```python
-deployment.predict(inputs=[[6082.7095, 0.0506, 0.7808, 0.4989, 730.9937]])
-# {'predictions': [[194.27143915992133, 0.03599419432421022, 5.404681588120277e-11]]}
-```
-
-The same point through the local `model.pkl` agrees to 1e-12. The 60-call search through the deployment:
-
-```
---target-mev 200 --min-charge-pc 20:  p_max 6082.7, cn2_max 0.0506, l_inj 0.7808, dip_frac 0.4989, x_of 731.0
-                                      predicted E_med 194.3 MeV, dE_mad 0.036, q_end 54.0 pC (loss 0.0368)
---target-mev 200 --min-charge-pc 20 --x-of 700:
-                                      p_max 5184.7, cn2_max 0.0506, l_inj 0.7703, dip_frac 0.4989
-                                      predicted E_med 187.2 MeV, dE_mad 0.028, q_end 22.1 pC (loss 0.0324)
-```
-
-The first search ends at a different point from the local one (192.0 MeV, loss 0.0387): the Bayesian optimiser follows a different path once predictions differ in the last digits, and both points are near-equal in loss. The deployment was stopped afterwards (`deployment.stop()`); start it again with `inference_pipeline.py`, which reuses it.
-
-Client behaviour found on the way, handled in the code:
+## Client behaviour handled in the code
 
 - `fv.training_data(primary_key=True)` returns the key as `<project>_<feature group>_<version>_config`, not `config`. The training pipeline renames it back.
 - `mr.get_model(name)` without a version returns version 1, not the latest. The inference pipeline takes the version with the best `r2_mean` unless `--model-version` is given.

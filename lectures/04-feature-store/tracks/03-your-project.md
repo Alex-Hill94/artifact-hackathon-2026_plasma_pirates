@@ -27,7 +27,7 @@ python -c "import hopsworks; p = hopsworks.login(); print(p.get_feature_store(na
 
 `(13073, 36)` means the share is in place. `hops fg list` shows only the feature groups your project owns; the shared stores are read through `get_feature_store(name=...)`.
 
-## Real rows, your feature, one view
+## A view on the real rows and your feature
 
 ```python
 import hopsworks
