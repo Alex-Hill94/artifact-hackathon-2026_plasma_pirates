@@ -31,6 +31,7 @@ from skopt.space import Real
 MODEL = "pallas_direct_b"
 DEPLOYMENT = "pallasdirectb"
 KNOBS = ["p_max", "cn2_max", "l_inj", "dip_frac", "x_of"]
+INITIAL_POINTS = 10  # random settings before the Gaussian process takes over
 HERE = Path(__file__).resolve().parent
 
 
@@ -43,6 +44,12 @@ def model_entry(project, version: int | None):
 def deploy(project, entry):
     ms = project.get_model_serving()
     deployment = ms.get_deployment(DEPLOYMENT)
+    if deployment is not None and deployment.model_version != entry.version:
+        # A deployment keeps the model version it was created with.
+        print(f"{DEPLOYMENT} serves v{deployment.model_version}, replacing it with v{entry.version}")
+        deployment.stop()
+        deployment.delete()
+        deployment = None
     if deployment is None:
         uploaded = project.get_dataset_api().upload(os.fspath(HERE / "predictor.py"), "Resources", overwrite=True)
         deployment = entry.deploy(
@@ -72,6 +79,10 @@ def main() -> None:
     ap.add_argument("--local", type=Path, metavar="MODEL_PKL", help="call this model.pkl instead of a deployment")
     ap.add_argument("--fg-dir", type=Path, help="with --local: feature_pipeline.py --out folder, for the search bounds")
     args = ap.parse_args()
+    if args.local and not args.fg_dir:
+        ap.error("--local needs --fg-dir")
+    if args.calls < INITIAL_POINTS:
+        ap.error(f"--calls must be at least {INITIAL_POINTS}")
 
     if args.local:
         import joblib
@@ -105,7 +116,7 @@ def main() -> None:
 
     result = gp_minimize(
         lambda x: loss(surrogate(settings(x)), args.target_mev, args.min_charge_pc),
-        space, n_calls=args.calls, random_state=args.seed,
+        space, n_calls=args.calls, n_initial_points=INITIAL_POINTS, random_state=args.seed,
     )
     best = settings(result.x)
     energy, spread, charge = surrogate(best)

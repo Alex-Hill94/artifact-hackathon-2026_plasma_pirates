@@ -31,6 +31,7 @@ from training_pipeline import CONTEXT, FEATURES, KNOBS, LABELS, NAME
 
 DEPLOYMENT = "claras02spot"  # deployment names are [a-zA-Z0-9] only
 SIZES = ["sigma_x_mm_mean", "sigma_y_mm_mean"]
+INITIAL_POINTS = 10  # random settings before the Gaussian process takes over
 
 
 def objective_um(moments_mm, target_um: float) -> float:
@@ -82,6 +83,8 @@ def main() -> None:
     ap.add_argument("--model-version", type=int, help="default: the latest")
     ap.add_argument("--local", type=Path, metavar="MODEL_DIR", help="call model.pkl from training_pipeline.py instead of a deployment")
     args = ap.parse_args()
+    if args.calls <= INITIAL_POINTS:  # the start of the scan is evaluated on top of the random settings
+        ap.error(f"--calls must be at least {INITIAL_POINTS + 1}")
 
     import hopsworks
 
@@ -112,7 +115,7 @@ def main() -> None:
     # Start where the operators started the scan.
     start = scan.loc[0, swept].astype(float).tolist()
     result = gp_minimize(lambda x: objective_um(moments(x), args.target_um), space, x0=[start],
-                         n_calls=args.calls, n_initial_points=10, acq_func="EI", random_state=args.seed)
+                         n_calls=args.calls, n_initial_points=INITIAL_POINTS, acq_func="EI", random_state=args.seed)
 
     span = np.array([d.high - d.low for d in space])
     distance = np.linalg.norm((scan[swept].to_numpy() - np.array(result.x)) / span, axis=1)

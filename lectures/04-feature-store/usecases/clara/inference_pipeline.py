@@ -30,6 +30,7 @@ import feature_pipeline
 
 MODEL = "clara_s04_surrogate"
 DEPLOYMENT = "clarasurrogate"  # deployment names are [a-zA-Z0-9] only
+INITIAL_POINTS = 20  # random settings before the Gaussian process takes over
 
 
 def optimise(predict, n_calls: int, spread: float, seed: int):
@@ -44,7 +45,7 @@ def optimise(predict, n_calls: int, spread: float, seed: int):
     warnings.filterwarnings("ignore", category=UserWarning)  # skopt/sklearn GP chatter
     # Start from the reference tune, the way an operator would.
     x0 = [float(np.clip(reference[name], lo, hi)) for name, (lo, hi) in box.items()]
-    result = gp_minimize(objective, space, x0=[x0], n_calls=n_calls, n_initial_points=20, acq_func="EI", random_state=seed)
+    result = gp_minimize(objective, space, x0=[x0], n_calls=n_calls, n_initial_points=INITIAL_POINTS, acq_func="EI", random_state=seed)
     return dict(zip(clara.FEATURES, map(float, result.x))), float(result.fun)
 
 
@@ -54,16 +55,24 @@ def check(best: dict, beam_seed: int) -> pd.DataFrame:
     return feature_pipeline.rows(clara.section(), clara.starting_beam(beam_seed), [best], "bo_check", beam_seed, 0.0, rng)
 
 
-def deployed_predict(model_version: int):
+def deployed_predict(model_version: int | None):
     import hopsworks
 
     project = hopsworks.login()
+    mr = project.get_model_registry()
+    # get_model without a version returns version 1, not the latest
+    entry = mr.get_model(MODEL, version=model_version or max(m.version for m in mr.get_models(MODEL)))
     ms = project.get_model_serving()
     deployment = ms.get_deployment(DEPLOYMENT)
+    if deployment is not None and deployment.model_version != entry.version:
+        # A deployment keeps the model version it was created with.
+        print(f"{DEPLOYMENT} serves v{deployment.model_version}, replacing it with v{entry.version}")
+        deployment.stop()
+        deployment.delete()
+        deployment = None
     if deployment is None:
         script = Path(__file__).with_name("predictor.py")
         uploaded = project.get_dataset_api().upload(str(script), "Resources", overwrite=True)
-        entry = project.get_model_registry().get_model(MODEL, version=model_version)
         deployment = entry.deploy(name=DEPLOYMENT, script_file=os.path.join("/Projects", project.name, uploaded))
     deployment.start(await_running=600)
     return lambda settings: deployment.predict(inputs=settings)["predictions"]
@@ -77,8 +86,10 @@ def main() -> None:
     ap.add_argument("--spread", type=float, default=1.0, help="same box as the feature pipeline")
     ap.add_argument("--beam-seed", type=int, default=100)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--model-version", type=int, default=1, help="model to deploy if the deployment does not exist yet")
+    ap.add_argument("--model-version", type=int, help="default: the latest")
     args = ap.parse_args()
+    if args.calls <= INITIAL_POINTS:  # the reference tune is evaluated on top of the random settings
+        ap.error(f"--calls must be at least {INITIAL_POINTS + 1}")
 
     if args.local:
         model = joblib.load(args.local / "model.pkl")

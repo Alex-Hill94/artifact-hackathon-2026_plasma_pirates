@@ -72,6 +72,12 @@ def main() -> None:
 
     start = time.time()
     deployment = project.get_model_serving().get_deployment("p1frombeam")
+    if deployment is not None and deployment.model_version != entry.version:
+        # A deployment keeps the model version it was created with.
+        print(f"p1frombeam serves v{deployment.model_version}, replacing it with v{entry.version}")
+        deployment.stop()
+        deployment.delete()
+        deployment = None
     if deployment is None:
         script = project.get_dataset_api().upload(os.fspath(PREDICTOR), "Resources", overwrite=True)
         deployment = entry.deploy(name="p1frombeam", script_file=os.path.join("/Projects", project.name, script))

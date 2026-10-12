@@ -1,6 +1,7 @@
 """Inference pipeline: deploy ess_llrf_anomaly, score cycles by key.
 
-Creates the deployment on first run and reuses it afterwards. A request carries keys only:
+Creates the deployment on first run, reuses it afterwards, and replaces it when it serves another
+model version than the one asked for. A request carries keys only:
 predictor.py looks up the 14 features of each (event_id, cycle_id, pv_base) in the online store
 and returns the anomaly score and the flag. Run it in the terminal of your own project: the
 serving gateway is not reachable from outside the cluster.
@@ -38,11 +39,17 @@ def main() -> None:
         ap.error("pass --key or --event")
 
     project = hopsworks.login()
+    mr = project.get_model_registry()
+    # get_model without a version returns version 1, not the latest
+    version = args.model_version or max(m.version for m in mr.get_models(args.model))
     deployment = project.get_model_serving().get_deployment(args.deployment)
+    if deployment is not None and deployment.model_version != version:
+        # A deployment keeps the model version it was created with.
+        print(f"deployment {args.deployment} serves model version {deployment.model_version}, replacing it with {version}")
+        deployment.stop()
+        deployment.delete()
+        deployment = None
     if deployment is None:
-        mr = project.get_model_registry()
-        # get_model without a version returns version 1, not the latest
-        version = args.model_version or max(m.version for m in mr.get_models(args.model))
         script = project.get_dataset_api().upload(os.fspath(HERE / "predictor.py"), "Resources", overwrite=True)
         deployment = mr.get_model(args.model, version=version).deploy(
             name=args.deployment,

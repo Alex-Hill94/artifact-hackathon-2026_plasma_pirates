@@ -26,7 +26,7 @@ deployment.predict(inputs=X_test.head(1).values.tolist())
 ```
 
 - A Python model needs a predictor script on this version: `deploy()` without `script_file` is refused. `usecases/pallas/predictor.py` loads `model.pkl` and calls `predict`; it fits any scikit-learn model saved that way.
-- A second run reuses the deployment `p1frombeam` if it exists. Delete it to serve a newer model version.
+- Every run registers a new model version. A second run replaces the deployment `p1frombeam` with one that serves it and prints `p1frombeam serves v1, replacing it with v2`.
 - scikit-learn is pinned in `requirements.txt` to the serving image's version, so a model trained on your laptop loads in the deployment.
 - Call the deployment from the terminal or from a job. The serving gateway is not reachable from outside the cluster.
 
