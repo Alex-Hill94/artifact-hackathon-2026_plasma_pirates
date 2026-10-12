@@ -923,7 +923,7 @@ This slide is the plan of Part III: generate (demo), condition (uncertainty), sc
 Link with the first slides: "Search" was one of the four gains. Generative models are how the search space is proposed; a checker (simulation, experiment) then filters.
 :::
 
-\fref{MatterGen: Nature 639, 624 (2025) · RFdiffusion: Nature 620, 1089 (2023) · CaloGAN: PRL 120, 042003 (2018)}
+\fref{MatterGen: Nature 639, 624 (2025) · RFdiffusion: Nature 620, 1089 (2023) · Paganini et al., PRL 120, 042003 (2018)}
 
 ## A family of generative models
 
@@ -1293,7 +1293,7 @@ Pitfall: a signal that dies faster is easy to reconstruct. A low score is not a 
 - Generative: sbi (simulation-based inference)
 
 \medskip
-\textbf{Demos of this lecture}: `demos/` (three notebooks, CPU, about 1 min each)
+\textbf{Demos of this lecture}: `demos/` (three notebooks, CPU, 25 s to 3 min each)
 :::
 
 ::::{.column width=50%}
