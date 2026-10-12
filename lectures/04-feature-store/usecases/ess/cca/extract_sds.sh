@@ -102,8 +102,9 @@ def process(task):
 
 def pair(rows, value_cols, cmp_names):
     """One row per (event, cycle, chain) from one row per component."""
-    df = pd.DataFrame(rows)
     keys = ["event_id", "cycle_id", "pv_base"]
+    # Some post-mortem tars hold every row twice; one copy per component, or the joins below multiply them.
+    df = pd.DataFrame(rows).drop_duplicates(keys + ["cmp"])
     shared = [c for c in df.columns if c not in value_cols and c != "cmp"]
     base = df.drop_duplicates(keys)[shared].set_index(keys)
     for cmp, name in cmp_names.items():
@@ -151,6 +152,9 @@ def main():
         channel[[c for c in channel.columns if c.startswith("cmp") and not c.endswith("peak_bin")]].astype("float32")
     waves = pair(wave_rows, ["wave"], {0: lambda c: "I", 1: lambda c: "Q"})
     waves = waves.dropna(subset=["I", "Q"])
+    for name, df in (("llrf_waveforms", waves), ("channel_stats", channel)):
+        if df.duplicated(["event_id", "cycle_id", "pv_base"]).any():
+            raise SystemExit(f"{name}: duplicate (event_id, cycle_id, pv_base)")
     waves["section"] = waves.pv_base.str.split(":").str[0]
     channel["section"] = channel.pv_base.str.split(":").str[0]
 

@@ -47,6 +47,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--results", type=Path, default=Path("/m4cast-results/ess"))
     ap.add_argument("--version", type=int, default=1)
+    ap.add_argument("--overwrite", action="store_true", help="delete and recreate the feature groups instead of upserting (refused while a feature view uses them)")
     ap.add_argument("--dry-run", action="store_true", help="read and check, write nothing")
     args = ap.parse_args()
 
@@ -60,6 +61,9 @@ def main() -> None:
                 df[c] = df[c].astype("int64")
         df["slurm_job_id"] = job
     waves = sample_flags(waves)
+    for name, df in (("llrf_waveforms", waves), ("channel_stats", stats)):
+        if df.duplicated(KEYS).any():
+            raise SystemExit(f"{name}: duplicate {KEYS}, rerun extract_sds.sh")
     print(f"slurm job {job}: {manifest['events']} events, {len(waves)} waveform rows "
           f"({int(waves.in_sample.sum())} in the sample, {int(waves.in_sample_holdout.sum())} holdout), "
           f"{len(stats)} channel rows")
@@ -69,19 +73,26 @@ def main() -> None:
     import hopsworks
 
     fs = hopsworks.login().get_feature_store()
-    fg = fs.get_or_create_feature_group(
-        name="ess_llrf_waveforms", version=args.version, primary_key=KEYS, event_time="cycle_ts",
-        online_enabled=False,
+
+    def write(df: pd.DataFrame, **spec) -> None:
+        fg = fs.get_or_create_feature_group(version=args.version, online_enabled=False, **spec)
+        if args.overwrite and fg.id is not None:
+            # Not insert(overwrite=True): the server clears a group by recreating it under a new id,
+            # and the 5.1.1 client then commits to the old one.
+            fg.delete()
+            fg = fs.get_or_create_feature_group(version=args.version, online_enabled=False, **spec)
+        fg.insert(df, wait=True)
+
+    write(
+        waves, name="ess_llrf_waveforms", primary_key=KEYS, event_time="cycle_ts",
         description="ESS SDS captures, full CC-IN2P3 archive: DIG-101:Dwn0 I/Q at 256 points per cycle and RF section "
                     "(public sample schema), sample and holdout flags",
         statistics_config={"columns": [c for c in waves.columns if c not in ("i", "q")]},
     )
-    fg.insert(waves, wait=True)
-    fg = fs.get_or_create_feature_group(
-        name="ess_sds_channel_stats", version=args.version, primary_key=KEYS, online_enabled=False,
+    write(
+        stats, name="ess_sds_channel_stats", primary_key=KEYS,
         description="ESS SDS captures, full CC-IN2P3 archive: full-resolution statistics of every RF chain per cycle",
     )
-    fg.insert(stats, wait=True)
 
 
 if __name__ == "__main__":
