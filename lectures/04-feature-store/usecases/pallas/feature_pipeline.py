@@ -21,7 +21,7 @@ parquet files match what the feature store returns.
     python feature_pipeline.py --insert
     python feature_pipeline.py --insert --only pallas_campaign_b
 
-    # the full pack once the organisers publish it: a URL or an unpacked folder
+    # the full pack: a URL or a folder, /m4cast/surrogate-models/data/pallas_hackathon_data on the cluster
     python feature_pipeline.py --source https://<full-pack-base-url> --insert
     python feature_pipeline.py --source ~/pallas_hackathon_data --out pallas_fg
 """
