@@ -1293,7 +1293,7 @@ Pitfall: a signal that dies faster is easy to reconstruct. A low score is not a 
 - Generative: sbi (simulation-based inference)
 
 \medskip
-\textbf{Demos of this lecture}: `demos/` (three notebooks, CPU, 25 s to 3 min each)
+\textbf{Demos of this lecture}: `demos/` (three notebooks, CPU)
 :::
 
 ::::{.column width=50%}
