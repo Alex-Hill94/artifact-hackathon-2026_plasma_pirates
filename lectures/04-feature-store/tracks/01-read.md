@@ -37,7 +37,7 @@ import hopsworks
 project = hopsworks.login(project="m4cast_ess")
 fs = project.get_feature_store()
 waves = fs.get_feature_group("ess_llrf_waveforms", version=1).read()
-waves.shape     # (52842, 24), about 4 s
+waves.shape     # (52842, 24), about 6 s
 ```
 
 The same three lines read CLARA and PALLAS: change the project and the name.
@@ -45,7 +45,7 @@ The same three lines read CLARA and PALLAS: change the project and the name.
 | Read | Time from a laptop |
 |---|---|
 | `m4cast_pallas.pallas_b_trajectories` | 3 s |
-| `m4cast_ess.ess_llrf_waveforms` | 4 s |
+| `m4cast_ess.ess_llrf_waveforms` | 5 to 6 s |
 | `m4cast_clara.clara_camera_captures` (193 columns) | 11 to 20 s |
 | `m4cast_clara.clara_camera_files` (a thumbnail per row) | 2 min |
 
