@@ -25,7 +25,7 @@ What the metric *is** differs by challenge, because the challenges differ:
 |---|---|---|
 | Surrogate models | R² per target (zone-aware), Wasserstein distance for particle clouds | Simulation campaigns with known ground truth — see `pallas_score.py` |
 | Anomaly detection | Reconstruction MSE on a fixed holdout split | No confirmed fault labels exist (see the challenge's `kickoff_notebook.ipynb`), so the score is model quality on unseen data, not a label match |
-| Optimisation | Best objective value (mm, real CLARA spot size) found, *and* evaluations needed to reach it | Real machine data; cost-per-evaluation matters on a real machine, so efficiency is reported alongside the best value, not just the value alone — see `kickoff_notebook.ipynb` |
+| Optimisation | `report.calc_score()` — mean per-case error in units of the requested spot size, plus a penalty for evaluation count (lower is better) | Real machine data; cost-per-evaluation matters on a real machine, so the score prices evaluation budget alongside tuning accuracy rather than reporting accuracy alone — see `score.py` |
 
 ## Logging to Weights & Biases
 
@@ -54,8 +54,8 @@ from the leaderboard (they still log to W&B, Agora just won't match them to your
     (`pallas/median_ratio` for particle clouds, `pallas/median_rel_l2_*` for fields) —
     see `pallas_score.py`'s own output. The leaderboard ranks on `pallas/mean_r2`; log the
     other keys too (for your own tracking), they just don't drive the ranking.
-  - Optimisation: `optim/best_mm` (lower is better, drives the ranking) and `optim/n_evals`
-    (logged alongside for context, not ranked on)
+  - Optimisation: `optim/score` — `report.calc_score()` from `score.py` (lower is better,
+    drives the ranking); log `optim/evals_per_case` alongside for context, not ranked on
 
 Logging is one or two lines around your existing scoring call — replace `<your-team-slug>`
 with the slug from your team's page in Agora (the `project` below is for anomaly-detection;

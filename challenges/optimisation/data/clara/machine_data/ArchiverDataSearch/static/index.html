@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLARA Archiver Image Search</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.min.css">
+<link rel="stylesheet" href="./static/style.css">
+</head>
+<body>
+
+<header>
+  <h1>CLARA Archiver Image Search</h1>
+  <div id="meta-summary" class="muted">loading index…</div>
+</header>
+
+<main>
+  <aside id="rail">
+
+    <section>
+      <h2>Time range</h2>
+      <div class="field">
+        <label for="mode">Mode</label>
+        <select id="mode">
+          <option value="all">All time</option>
+          <option value="absolute">From / to</option>
+          <option value="following">From + N days</option>
+        </select>
+      </div>
+      <!-- Date and time are separate controls: a single datetime-local reports
+           no value at all until every segment is filled, so a date typed
+           without a time was silently dropped. The time starts at midnight so
+           that filling in only the date is enough. -->
+      <div class="field hidden range-field">
+        <label for="from-date">From (UTC)</label>
+        <div class="datetime">
+          <input type="date" id="from-date">
+          <input type="time" id="from-time" value="00:00" title="midnight unless you change it"
+                 aria-label="From time (UTC)">
+        </div>
+      </div>
+      <div class="field hidden absolute-field">
+        <label for="to-date">To (UTC)</label>
+        <div class="datetime">
+          <input type="date" id="to-date">
+          <input type="time" id="to-time" value="00:00" title="midnight unless you change it"
+                 aria-label="To time (UTC)">
+        </div>
+      </div>
+      <div class="field hidden following-field">
+        <label for="days">Days</label>
+        <input type="number" id="days" min="0.01" step="0.5" value="5">
+      </div>
+    </section>
+
+    <section>
+      <h2>Cameras</h2>
+      <div id="cameras" class="checklist"><span class="muted">loading…</span></div>
+    </section>
+
+    <section>
+      <h2>Filters</h2>
+      <div id="filters"></div>
+      <div class="row-actions">
+        <button type="button" id="add-filter" class="secondary">+ Add filter</button>
+        <label class="inline">
+          Combine
+          <select id="combine">
+            <option value="and">all (AND)</option>
+            <option value="or">any (OR)</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Extra columns</h2>
+      <p class="muted small">PV values to show alongside each result.</p>
+      <div id="select-pvs" class="chips"></div>
+      <input type="text" id="select-input" list="pv-list" placeholder="add a PV…">
+    </section>
+
+    <div class="rail-actions">
+      <button type="button" id="run" class="primary">Search</button>
+      <button type="button" id="reset" class="secondary">Reset</button>
+    </div>
+  </aside>
+
+  <section id="content">
+    <nav class="tabs">
+      <button type="button" class="tab active" data-tab="results">Results</button>
+      <button type="button" class="tab" data-tab="plot">Plot</button>
+      <div class="spacer"></div>
+      <span id="status" class="muted"></span>
+      <button type="button" id="export" class="secondary">Export CSV</button>
+      <button type="button" id="share" class="secondary">Copy link</button>
+    </nav>
+
+    <div id="panel-results" class="panel">
+      <div id="error" class="error hidden"></div>
+      <div class="table-wrap">
+        <table id="results">
+          <thead><tr></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div id="pager" class="pager hidden">
+        <button type="button" id="prev" class="secondary">← Previous</button>
+        <span id="page-info"></span>
+        <button type="button" id="next" class="secondary">Next →</button>
+        <label class="inline">
+          Per page
+          <select id="limit">
+            <option>25</option><option selected>100</option>
+            <option>250</option><option>1000</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div id="panel-plot" class="panel hidden">
+      <div class="plot-controls">
+        <label class="inline">
+          Plot PVs
+          <input type="text" id="plot-input" list="pv-list" placeholder="add a PV…">
+        </label>
+        <label class="inline">
+          or pattern
+          <input type="text" id="plot-pattern" placeholder="e.g. *:getPhase" size="18">
+        </label>
+        <button type="button" id="plot-run" class="primary">Plot</button>
+      </div>
+      <div id="plot-pvs" class="chips"></div>
+      <div id="plot-error" class="error hidden"></div>
+      <div id="plot"></div>
+      <div id="plot-legend" class="legend"></div>
+    </div>
+  </section>
+</main>
+
+<datalist id="pv-list"></datalist>
+
+<dialog id="row-dialog">
+  <h2 id="row-title">Row</h2>
+  <div id="row-body"></div>
+  <form method="dialog"><button class="secondary">Close</button></form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/uplot@1.6.31/dist/uPlot.iife.min.js"></script>
+<script src="./static/app.js"></script>
+</body>
+</html>
