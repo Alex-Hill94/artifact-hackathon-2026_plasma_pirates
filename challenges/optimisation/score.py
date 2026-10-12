@@ -94,6 +94,15 @@ TARGET_LABELS = ("mu_x", "mu_y", "sigma_x", "sigma_y")
 HIT_TOLERANCES = (0.50, 0.25, 0.10)
 _PENALTY_UM = 1e4  # booked against a case that fails, loses the beam, or errors
 
+# Weights for `Report.calc_score`. Every term is dimensionless — errors are in units of
+# the spot size that was asked for — so these are honest trade-offs rather than an
+# accident of micrometres and call counts sharing a plus sign.
+MU_WEIGHT = 1.0
+SIGMA_WEIGHT = 1.0
+EVAL_WEIGHT = 0.5
+EVAL_BUDGET = 50.0  # calls per case costing EVAL_WEIGHT; each doubling costs another
+FAILURE_SCORE = 10.0  # what a lost beam or an invalid segment books, in spot sizes
+
 MISALIGNMENT_RMS = 50e-6  # m, per plane, quadrupoles and sextupoles, times `severity`
 SCREEN_MISALIGNMENT_RMS = 30e-6  # m, the readout screen's own offset
 
@@ -655,6 +664,7 @@ class Report:
     def __str__(self) -> str:
         lines = [
             f"{self.name}  —  {len(self.cases)} cases at {READOUT_SCREEN}",
+            f"  score            {self.calc_score():10.3f}  (lower is better)",
             f"  mean error       {self.mean_error_um:10.2f} um",
             f"  median error     {self.median_error_um:10.2f} um",
             f"  worst error      {self.worst_error_um:10.2f} um",
@@ -677,6 +687,41 @@ class Report:
                 shown = ", ".join(str(i) for i in indices[:5])
                 lines.append(f"      [{shown}{more}] {reason}")
         return "\n".join(lines)
+
+    def per_case_scores(self) -> np.ndarray:
+        """What each case contributes to `calc_score`, in requested spot sizes.
+
+        A case is judged against the spot it was asked for, so a tight request counts
+        for as much as a loose one. Contributions are clipped at `FAILURE_SCORE`, which
+        is also what a failed case books — so losing the beam is never cheaper than
+        delivering a bad one, and one disastrous case cannot swamp the other ninety-nine.
+        """
+        scores = []
+        for case in self.cases:
+            if case.failure is not None or case.achieved is None:
+                scores.append(FAILURE_SCORE)
+                continue
+            error = np.abs(case.achieved - case.target) / float(case.target[2:].mean())
+            scores.append(
+                min(
+                    MU_WEIGHT * (error[0] + error[1]) / 2
+                    + SIGMA_WEIGHT * (error[2] + error[3]) / 2,
+                    FAILURE_SCORE,
+                )
+            )
+        return np.array(scores)
+
+    def calc_score(self) -> float:
+        """One number for the leaderboard, lower is better. Dimensionless.
+
+        Mean per-case error in units of the requested spot size, plus `EVAL_WEIGHT` for
+        every doubling of the evaluation budget — beam time costs order of magnitude,
+        not increments, so 40 to 80 calls is priced like 2000 to 4000.
+        """
+        if not self.cases:
+            return float("nan")
+        cost = EVAL_WEIGHT * np.log2(1 + self.evaluations_per_case / EVAL_BUDGET)
+        return float(self.per_case_scores().mean() + cost)
 
 
 def score(

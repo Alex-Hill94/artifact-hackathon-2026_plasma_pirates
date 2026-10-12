@@ -3,6 +3,23 @@
 Run: SUBMISSION=sub.csv KEY=key.csv /path/to/python pallas_score.py
 Scoring rules in full: data/README.md; scales and baselines: DATA_CARD.md in the data pack.
 A position-dependent task is scored against the PER-Z MEAN, not the global mean.
+
+The key decides the scoring. The scorer reads the key's columns and picks the scoring
+function from them: `config` alone gives one R2 per target against the global mean;
+`config` plus `z_mm` or `plane_mm` gives the per-position R2 in the in-plasma zone, and then
+`L_inj` must be in the key as well (it locates the plasma end and is not scored). An extra
+or missing id column therefore calls the wrong scoring function. Every other column of the
+key is a target and IS scored, so a key holds the id columns and the targets of the
+objective and nothing else. The submission carries the same id columns and one column per
+target, in physical units. Key columns per objective (targets: objectives.md):
+    inverse A, direct B, inverse B        config
+    trajectory (in-plasma, drift, OOD)    config, z_mm, L_inj
+    moments at the planes                 config, plane_mm, L_inj
+    particle clouds, field maps           folders: PARTICLES_SUBMISSION / PARTICLES_KEY,
+                                          FIELD_SUBMISSION / FIELD_KEY
+To score yourself, hold out whole configurations and write their true values in this shape
+as your key; the organisers run this file with the hidden keys. "mean" is the plain mean
+over the targets; a negative R2 means worse than predicting the mean.
 """
 
 import os
