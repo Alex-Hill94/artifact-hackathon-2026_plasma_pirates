@@ -1,5 +1,5 @@
 # 5.1.1 plus the fixes the workshop needs; the PyPI client ignores the key that hops setup stores
-hopsworks[python] @ git+https://github.com/MagicLex/hopsworks-api@cef1cb3bc098e0e59237b218de1d863a6594fea0#subdirectory=python
+hopsworks[python] @ git+https://github.com/MagicLex/hopsworks-api@ae7e491df2c9c7e7a42ba33f287cfce884d0541d#subdirectory=python
 pandas>=2.2
 pyarrow>=15
 numpy>=1.26
