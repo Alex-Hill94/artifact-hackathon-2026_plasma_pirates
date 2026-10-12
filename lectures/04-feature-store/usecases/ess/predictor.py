@@ -1,9 +1,9 @@
 """Predictor script for the ess_llrf_anomaly deployment.
 
-A request carries keys only, [{"event_id": ..., "cycle_id": ...}, ...]. The predictor looks up
-each feature vector in the online store through the model's feature view and returns
-[anomaly_score, flagged] per cycle: score is the flipped IsolationForest score (higher is more
-anomalous), flagged is true above the threshold set by the training contamination.
+A request carries keys only, [{"event_id": ..., "cycle_id": ..., "pv_base": ...}, ...]. The
+predictor looks up each feature vector in the online store through the model's feature view and
+returns [anomaly_score, flagged] per key: score is the flipped IsolationForest score (higher is
+more anomalous), flagged is true above the threshold set by the training contamination.
 """
 
 import os

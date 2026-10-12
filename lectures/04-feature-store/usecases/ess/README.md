@@ -1,162 +1,251 @@
 # ESS LLRF anomaly detection
 
-Unsupervised anomaly scoring of ESS RF post-mortem captures, split into feature, training and inference programs that share only the feature store and the model registry.
+Unsupervised anomaly scoring of ESS RF captures on the full challenge data, split into feature, training and inference programs that share only the feature store and the model registry. The challenge's own autoencoder is trained on the same data and scored with the organisers' `score.py`.
 
 ## Data
 
-Real data: the 210-row public sample of the AISSAI 2026 anomaly-detection challenge, read over HTTPS from the organisers' repository at a pinned commit:
+The feature group `ess_llrf_waveforms` v1 in the project `m4cast_ess` (feature store `m4cast_ess_featurestore`), filled from the SDS archive at CC-IN2P3. Read on 2026-10-12:
 
-```
-https://raw.githubusercontent.com/aghribi/artifact-hackathon-2026/de9c997f35dffc4b359050ad9298c75e065366f1/challenges/anomaly-detection/data/sample/
-    ess_llrf_sample.parquet   210 rows
-    holdout_ids.json          42 holdout row positions, seed 42
-```
+| | |
+|---|---|
+| Rows | 52,842, one per key |
+| One row | one acquisition cycle of one RF chain (`DIG-101:Dwn0` of a cavity section), `i` and `q` at 256 decimated points |
+| Key | `event_id`, `cycle_id`, `pv_base`. Event time `cycle_ts` |
+| Events | 108 captures, 2,380 cycles, 9 to 42 cycles per capture. 65 post-mortem (`ctype` PM) and 43 on demand (DD) |
+| Chains | 28 values of `pv_base`: 13 Spoke, 9 MBL and 5 HBL sections, plus one `DODData` channel with 9 rows |
+| Campaigns | 32 captures on 28 to 30 May 2025 (31,735 rows, Probe beam), 76 captures on 4 to 30 June 2026 (21,107 rows) |
+| Public sample | the 210 rows of the challenge sample carry `in_sample`; the 42 rows the organisers score on carry `in_sample_holdout` |
 
-Each row is one acquisition cycle of one RF chain (`DIG-101:Dwn0`) from an ESS Synchronous Data Service (SDS) post-mortem capture: 42 events of 5 cycles each, June 2026, two cavities (`MBL-010RFC`: 190 rows, `MBL-090RFC`: 20 rows), three beam modes (RfTest 115, Probe 50, SlowCommissioning 45). Waveforms `I` and `Q` are decimated to 256 points. In the sample, `I` has the shape of an amplitude envelope (fill, flat-top near 8.16, decay) and `Q` of a phase trace (flat near 93, then drifting); 20 of the 50 Probe rows carry no RF at all. Neither reading is confirmed by the case holder, so the features keep the column names. The full 71 GB raw archive is not used here.
+`i` is an amplitude envelope: fill, flat-top, decay. `q` stays within ±180 and wraps, as a phase in degrees does, and it is noise once the amplitude has decayed. The case holder has not confirmed either reading, so the features keep the column names. The flat-top lasts about 44 samples in May 2025 and about 108 in June 2026.
+
+The same project holds `ess_sds_channel_stats` (497,659 rows, same key): the kickoff notebook's statistics at full resolution for three channels per section. The pipelines here do not read it; it joins on the key.
 
 Sources to cite:
 
-- Challenge and sample: AISSAI 2026 hackathon, anomaly-detection challenge, case holder Ishkhan Gorgisyan (ESS), github.com/aghribi/artifact-hackathon-2026 at `de9c997f`.
+- Challenge and data: AISSAI 2026 hackathon, anomaly-detection challenge, case holder Ishkhan Gorgisyan (ESS), github.com/aghribi/artifact-hackathon-2026.
 - Gorgisyan I. et al. (2026). Strategy of AI Application and Current Activities at European Spallation Source Proton Linac. EPJ Res. Infrastruct. 10(1):28. https://doi.org/10.1007/s41781-026-00182-7
 - Martins J. et al. (2025). The ESS synchronous data service (SDS) development and first results. ICALEPCS25, TUMG018. https://doi.org/10.18429/JACoW-ICALEPCS2025-TUMG018
 
-## Real and synthetic
-
-| | Real | Synthetic (`generators/ess_sds_stream.py`) |
-|---|---|---|
-| Waveforms | as published | the 5 cycles of one real event, `I` times a gain, `Q` plus an offset, one draw per event |
-| Gain and offset spread | | cycle-to-cycle standard deviation of flat-top `I` level (relative) and flat-top `Q` level inside the source event; setpoint changes between events are not invented |
-| Metadata | as published | copied from the source event |
-| `event_id` | SDS id | epoch milliseconds at emission, above every real id |
-| `cycle_id` | SDS id | `event_id` plus the source event's real cycle offsets |
-| `event_ts` | capture time | emission time |
-| Gap to next event | | a real gap between consecutive sample events, divided by `--speedup` (default 3600) |
-| `synthetic` | False | True |
-| `source_event_id` | own `event_id` | the real event copied |
-| `injected_anomaly` | False | True when `--hot` fired |
-
-`--hot RATE` is the one invented signal: on that share of events (picked among events with RF), the last cycle gets a linear sag of `I` across the flat-top, depth `--droop` (default 2%). The sample holds no confirmed fault of this kind, so the depth is a parameter, not a measurement. Measured on the sample, the real spread it competes with is small: flat-top `I` level varies by a median 0.002% from cycle to cycle inside an event.
-
 ## Feature store objects
 
-| Object | Name | Key | Written by | Read by |
-|---|---|---|---|---|
-| Feature group | `ess_sds_events` v1, online | `event_id`, `cycle_id`; event time `event_ts` | `feature_pipeline.py`, generator | `inference_pipeline.py` (finds new synthetic cycles) |
-| Feature group | `ess_waveform_features` v1, online | `event_id`, `cycle_id`; event time `event_ts` | `feature_pipeline.py`, generator | feature view |
-| Feature view | `ess_llrf_anomaly` v1 | serving keys `event_id`, `cycle_id` | `training_pipeline.py` | training, `predictor.py` |
-| Model | `ess_llrf_anomaly` | linked to the feature view | `training_pipeline.py` | deployment |
-| Deployment | `essanomaly`, `predictor.py` | request: list of `{event_id, cycle_id}` | `inference_pipeline.py` | `inference_pipeline.py` |
+In `m4cast_ess` you are a Data scientist: you read, and you cannot create a feature group or a deployment. The pipelines run in a project you own, with the real store shared into it ([track 03](../../tracks/03-your-project.md)).
 
-`ess_sds_events` columns: `source_tar`, `pv_base`, `trig_code`, `trig_user_tag`, `beam_mode`, `beam_state`, `beam_present`, `synthetic`, `source_event_id`, `injected_anomaly`.
+| Object | Name | Where | Key | Written by | Read by |
+|---|---|---|---|---|---|
+| Feature group | `ess_llrf_waveforms` v1, offline | `m4cast_ess`, read-only | `event_id`, `cycle_id`, `pv_base`; event time `cycle_ts` | the organisers | `feature_pipeline.py`, `training_pipeline.py` |
+| Feature group | `ess_waveform_features` v1, online | your project | same key, same event time | `feature_pipeline.py` | feature view `ess_llrf_anomaly` |
+| Feature view | `ess_llrf_anomaly` v1 | your project | serving keys `event_id`, `cycle_id`, `pv_base` | `training_pipeline.py` | training, `predictor.py` |
+| Feature view | `ess_llrf_autoencoder` v1 | your project | | `training_pipeline.py` | training |
+| Model | `ess_llrf_anomaly` | your project | linked to its view | `training_pipeline.py` | deployment |
+| Model | `ess_llrf_autoencoder` | your project | linked to its view | `training_pipeline.py` | |
+| Deployment | `essanomaly`, `predictor.py` | your project | request: list of `{event_id, cycle_id, pv_base}` | `inference_pipeline.py` | `inference_pipeline.py`, `hops deployment predict` |
 
-`ess_waveform_features`, 14 per cycle, all computed in `feature_pipeline.build`, also used by the generator:
+`ess_llrf_anomaly` reads `ess_waveform_features` only. A view that also selects columns of `ess_llrf_waveforms` trains but cannot serve: the real group is offline, and `init_serving` refuses a view with an offline group in it. The split flag is therefore read from the real group by key, next to the view.
+
+## Features
+
+`ess_waveform_features`, 14 per row, computed in `feature_pipeline.build`:
 
 | Feature | Definition |
 |---|---|
-| `i_max` | peak of `I` |
+| `i_max` | peak of `i` |
 | `i_flat_level`, `i_flat_len` | median and length of the flat-top, samples at or above 97% of the peak |
 | `i_flat_ripple` | flat-top standard deviation over its level |
 | `i_droop` | first quarter minus last quarter of the flat-top, over its level |
 | `i_rise`, `i_fall` | samples from 10% of the peak to the flat-top, and from its end back below 10% |
 | `i_tail_noise`, `q_tail_noise` | standard deviation of sample-to-sample differences over the last 32 samples |
-| `q_flat_mean`, `q_flat_std` | `Q` over the flat-top window |
-| `q_decay_slope` | linear slope of `Q` from the end of the flat-top |
-| `i_cycle_dev`, `q_cycle_dev` | RMS distance of the cycle from the median waveform of its event's cycles |
+| `q_flat_mean`, `q_flat_std` | `q` over the flat-top window, unwrapped |
+| `q_decay_slope` | linear slope of unwrapped `q` from the end of the flat-top until `i` is below 10% of the peak |
+| `i_cycle_dev`, `q_cycle_dev` | RMS distance of the cycle from the median waveform of the cycles of the same event on the same chain; for `q`, on wrapped differences, where the RF is on |
 
-The raw 256-point arrays are not stored. Hopsworks 5.1 supports `ARRAY<DOUBLE>` features, but online they map to `VARBINARY(100)` by default; 256 doubles need an explicit `BLOB` online type. The model does not need them.
+The waveforms themselves stay in `ess_llrf_waveforms`. The model does not need them online.
 
-## Model
+## Models
 
-`StandardScaler` plus `IsolationForest(n_estimators=300, contamination=0.05, random_state=42)` on the 14 features. No confirmed fault labels exist for this data (`trig_code` is an unconfirmed weak label and here it separates the two cavities exactly), so the model learns the envelope of the real cycles. Score: the flipped `score_samples`, higher is more anomalous. Flag: above the threshold that marks 5% of the training cycles.
+`ess_llrf_anomaly`: `StandardScaler` plus `IsolationForest(n_estimators=300, contamination=0.01, random_state=42)` on the 14 features. No confirmed fault labels exist for this data, so the model learns the envelope of the cycles. Score: the flipped `score_samples`, higher is more anomalous. Flag: above the threshold that marks 1% of the training rows. `--start` and `--end` cut the training rows on `cycle_ts` through the feature view; the model then scores every row.
 
-Split: the challenge's `holdout_ids.json`, row positions mapped to `(event_id, cycle_id)`. It is stratified on rows, so cycles of one event sit on both sides. Training reads the feature view between `--start 2026-06-01` and `--end 2026-07-01`, the window of the real sample, so synthetic rows never enter training.
+`ess_llrf_autoencoder`: `RFAutoencoder` and `score_holdout` imported from `challenges/anomaly-detection/score.py`, the same optimiser, batch size and seed as its `train_reference`. The difference is the training rows: every row of `ess_llrf_waveforms` outside the holdout, read through a feature view, where the reference uses the 168 training rows of the public sample. `q` is normalised with the mean and deviation of those 168 rows, as the reference does, so the result is on the scale of the bar. Needs `torch`, as the challenge's own `requirements.txt` does. The cluster terminal has scikit-learn 1.8.0 and the Hopsworks client, and no `torch`: the CPU wheel installs there in about 6 seconds with the command below.
 
-The challenge's own score (autoencoder reconstruction MSE on `Q`, bar 0.0194) is not comparable with an IsolationForest score.
+Neither model trains on a row with `in_sample_holdout`.
 
 ## Run
 
-From this folder, with the lecture venv (`pip install -r ../../requirements.txt`):
+| Step | Command | Where |
+|---|---|---|
+| Features, look only | `python feature_pipeline.py` | laptop or cluster terminal |
+| Features, write | `python feature_pipeline.py --insert` | terminal of your project |
+| Train both models | `python training_pipeline.py` | laptop or cluster terminal |
+| Deploy, score by key | `python inference_pipeline.py --event 16122602164` | terminal of your project |
+
+In the terminal of your own project, after the organisers shared the real stores into it:
 
 ```bash
-python feature_pipeline.py --out data            # local frames
-python generators/ess_sds_stream.py --n 1        # one synthetic event as JSON
-python generators/ess_sds_stream.py --n 200 --hot 0.3 --seed 7 --out data/synthetic.parquet
-python training_pipeline.py --local data         # train, holdout metrics, model/model.pkl
-```
+git clone -b lecture-04-feature-store https://github.com/MagicLex/artifact-hackathon-2026
+cd artifact-hackathon-2026/lectures/04-feature-store/usecases/ess
+uv pip install torch --index-url https://download.pytorch.org/whl/cpu   # for the autoencoder only
 
-On a cluster (`HOPSWORKS_HOST`, `HOPSWORKS_PROJECT`, `HOPSWORKS_API_KEY` set):
-
-```bash
 python feature_pipeline.py --insert
-python training_pipeline.py                      # feature view, training, model registry
-python generators/ess_sds_stream.py --insert --follow --hot 0.2 &
-python inference_pipeline.py --follow            # deploys on first run, prints scores
-python inference_pipeline.py --key 16096686207:16096686195
+python training_pipeline.py
+python inference_pipeline.py --event 16122602164
+python inference_pipeline.py --key 16122602164 16122596526 HBL-050RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData
+hops deployment stop essanomaly
 ```
 
-The generator and the loop run side by side as two clients of the same user. Give each its own certificate folder (`export HOPSWORKS_CERT_FOLDER=$(mktemp -d)` per terminal), or the first to exit deletes the other's certificates.
+From a laptop, with the lecture venv (`uv pip install -r ../../requirements.txt`) and `hops project use <your project>`: `python feature_pipeline.py` without `--insert`, and `python training_pipeline.py`. The insert and the inference pipeline need the cluster: an insert goes through Kafka and HopsFS, a prediction through the serving gateway.
 
-`notebook.ipynb` walks the same steps locally, cluster calls shown as code blocks.
+`notebook.ipynb` walks the same steps from a laptop. It only reads: the real group, the features, the anomaly model fitted in memory.
 
-## Verified locally
+Variants:
 
-Run on 2026-10-10, scikit-learn 1.8, no cluster:
-
-```
-$ python feature_pipeline.py --out data
-42 events, 210 cycles, 14 features per cycle
-
-$ python training_pipeline.py --local data
-train 168 cycles, holdout 42 cycles, 14 features
-train_mean_score     0.4378
-holdout_mean_score   0.4491
-holdout_flag_rate    0.0952
-top holdout cycles:
-   event_id    cycle_id    score
-16096686207 16096686195 0.699664
-16096686207 16096686199 0.683636
-16096683557 16096683546 0.636402
+```bash
+python feature_pipeline.py --out data                                # keep the frame as parquet
+hops job deploy ess_features feature_pipeline.py --args "--insert" --run --wait    # the insert as a job inside the cluster
+python training_pipeline.py --only ess_llrf_anomaly --end 2026-01-01   # train on the May 2025 campaign
+python training_pipeline.py --only ess_llrf_autoencoder --sample-chains --epochs 30
+python training_pipeline.py --only ess_llrf_autoencoder --strict
 ```
 
-On the real cycles, the flags fall on the rare population: 12 of the 20 `MBL-090RFC` Probe cycles, the only ones without RF, plus 1 `MBL-010RFC` Probe cycle. The top holdout cycles above are `MBL-090RFC` Probe.
+## Results
 
-Scoring 200 synthetic events (`--hot 0.3 --seed 7`, 61 injected) with that model: drooped cycles average 0.597 against 0.432 for the rest, ROC AUC 0.958, but only 24.6% of drooped cycles cross the 5% threshold (3.9% of the others do, mostly Probe). IsolationForest ranks them well and saturates; a lower threshold, or one model per cavity and beam mode, would flag more.
+Run on 2026-10-12 against `https://aissai26.hops.live` (Hopsworks 5.1.1), as a participant account, in the project `tester_ess` with `m4cast_ess_featurestore` shared read-only. Client from `requirements.txt`, scikit-learn 1.8, torch 2.14, Python 3.11. The real groups were re-ingested without duplicate keys at 13:46 that day; the feature pipeline, the autoencoder and the inference were run again afterwards, and the logs below are from those runs where a count appears. The rows themselves did not change, so the anomaly model's numbers are the ones of the morning runs. Commands were run from a laptop on the cluster's network; the insert and the inference pipeline also from the terminal of the project.
 
-## Verified on a cluster
-
-Run on 2026-10-10 against a Hopsworks 5.1.1 cluster, external Python client `hopsworks` 5.1.1, scikit-learn 1.8, project `aissai26_ess`, every command above in order:
-
-- `feature_pipeline.py --insert`: both groups created and filled, 210 rows each. The first attempt failed on the offline Delta write (`Connection to HopsFS failed after 3 attempts`) while two other projects were writing; the unchanged retry passed in 5m53s.
-- `ess_sds_stream.py --insert --n 10 --hot 0.3`: 10 events online, 6m18s, most of it in the online write.
-- `training_pipeline.py`: same split and numbers as the local run (train 168, holdout 42, holdout mean score 0.4491, flag rate 0.0952, same top cycles). Model `ess_llrf_anomaly` v1 registered with the feature view; the model upload took 11 minutes.
-- `inference_pipeline.py --key 16096686207:16096686195`: deployment `essanomaly` created with `predictor.py`, running after 44 s, response `{'predictions': [[0.6996643884534517, True]]}`, the same score as the local model.
-- `inference_pipeline.py --follow` next to `ess_sds_stream.py --insert --follow --n 4 --hot 0.3 --max-wait 3`: 40 live cycles read from the online store and scored through the deployment. Excerpt (`injected` printed 0/1 in this run, now False/True):
+### Feature pipeline
 
 ```
-event_id       cycle_id       source_event_id  injected  score   flagged
-1791632050854  1791632050718  16121644564      1         0.383
-1791632050854  1791632050732  16121644564      1         0.578
-1791632050886  1791632050874  16096686207      0         0.700   ANOMALY
-1791632051121  1791632050994  16122829627      1         0.469
-1791632051121  1791632051008  16122829627      1         0.597
+$ python feature_pipeline.py --insert
+read 52842 rows in 6 s, 0 repeated keys dropped
+108 events, 2380 cycles, 28 chains: 52842 rows, 14 features, 4 s
+inserted 52842 rows into ess_waveform_features v1 in 29 s
 ```
 
-The drooped last cycle of each injected event scored highest in its event (0.578 and 0.597 against 0.37 to 0.47) but stayed under the threshold, as in the local check. Copies of the no-RF `MBL-090RFC` event were flagged, as the real event is. The deployment was stopped afterwards: `inference_pipeline.py` starts it again.
+43 s in all from the laptop. From the terminal of the project: read 3 s, features 15 s, insert 9 s. As the job `ess_features`: about one minute from submission to the end.
 
-Fixes made on the way:
+### Anomaly model
 
-- `fv.training_data(..., primary_key=True)` returns the keys as `<project>_<fg>_<version>_<key>`, for example `aissai26_ess_ess_waveform_features_1_event_id`, even for a one-group view. `training_pipeline.py` renames them back.
-- The generator wrote `ess_sds_events` before `ess_waveform_features`. The polling loop then found events whose features were not online yet, and the predictor failed with `Found array with 0 sample(s)`. The generator now writes features first.
-- Booleans come back from the online store as TINYINT; the loop prints them as booleans.
+```
+$ python training_pipeline.py --only ess_llrf_anomaly --end 2026-01-01
+
+ess_llrf_anomaly: trained on 31735 rows, 14 features, 2 s
+                              rows  flagged
+all rows                     52842      986
+holdout                         42        4
+RF off                         269      269
+pulse cut short                 14       14
+outside the training window  21107      668
+registered ess_llrf_anomaly v1
+
+$ python training_pipeline.py --only ess_llrf_anomaly
+
+ess_llrf_anomaly: trained on 52800 rows, 14 features, 2 s
+                  rows  flagged
+all rows         52842      532
+holdout             42        4
+RF off             269      269
+pulse cut short     14       14
+registered ess_llrf_anomaly v2
+```
+
+20 s and 27 s. What the rows of the report are:
+
+- **RF off**: 269 rows whose peak is under 10% of their chain's median peak. MBL-090, Spk-010 and Spk-020 in the captures of 4 to 10 June 2026. They are exactly the rows with `trig_code` 14; every other row has 15. The 4 flagged holdout rows are four of them, on MBL-090.
+- **Pulse cut short**: 14 rows whose flat-top is under half the median length of the cycles of the same event on the same chain: 13 to 17 samples where the others hold 53 or 108. Ten of them are the same cycle, `16122596526` on 29 June 2026 at 18:13:56, on ten HBL and MBL chains; that `cycle_id` is also the `event_id` of a post-mortem capture. Two more are cycle `16122697297`, also the id of a post-mortem capture. These are facts read from the waveforms. Nobody has confirmed them as faults.
+- **Model v1**, trained on May 2025, flags 1.0% of May 2025 and 3.2% of June 2026 (668 of 21,107 rows): the 269 rows with the RF off, the 13 cut pulses of June 2026, and 386 HBL and MBL rows. June 2026 runs pulses 108 samples long where May 2025 ran 44. The 14 cut pulses rank between 1 and 27 of 52,842 rows.
+- **Model v2**, trained on both campaigns, flags 532 rows: the 269 rows with the RF off first, then the 14 cut pulses (ranks 254 to 330), then 249 rows, 246 of them Spk-050 in May 2025. On that chain the flat-top climbs by 1% from start to end; on the other Spoke chains by 0.3%.
+
+The model ranks rare operating states above single odd cycles. A per-chain model, or features relative to the chain's own median, would rank the cut pulses first.
+
+### Autoencoder, scored with `score.py`
+
+The bar of the challenge is 0.0194: the reference autoencoder trained on the 168 training rows of the public sample, mean reconstruction MSE on the 42 holdout rows. `python score.py` in `challenges/anomaly-detection/` gives 0.0194 here too, and so does the same model trained on those 168 rows read from the feature group.
+
+| Command | Training rows | Epochs | Holdout MSE, mean | Median | Training |
+|---|---|---|---|---|---|
+| `python score.py` (the bar) | 168 | 30 | 0.0194 | 0.0164 | 3 s |
+| `training_pipeline.py --only ess_llrf_autoencoder` | 52,800 | 5 | 0.0136 | 0.0047 | 64 s |
+| `... --sample-chains --epochs 30` | 4,256 | 30 | 0.0130 | 0.0038 | 37 s |
+| `... --strict` | 46,250 | 5 | 0.0139 | 0.0049 | 55 s |
+| `... --strict --sample-chains --epochs 30` | 3,727 | 30 | 0.0144 | 0.0044 | 28 s |
+
+```
+$ python training_pipeline.py --only ess_llrf_autoencoder
+
+ess_llrf_autoencoder: trained on 52800 rows, 5 epochs, 64 s
+holdout mean reconstruction MSE 0.0136, median 0.0047, 42 rows
+on the scale of the bar (sigma 39.73); 0.0019 with the training rows' own sigma 106.35
+registered ess_llrf_autoencoder v5
+```
+
+How to read the table:
+
+- The holdout is 38 rows of MBL-010 and 4 of MBL-090. `--sample-chains` trains on those two chains only.
+- Every holdout row has 10 to 12 cycles of the same event and chain in the training rows, and consecutive cycles are nearly identical. `--strict` leaves out every cycle of the 25 events that hold a holdout row. The score moves from 0.0136 to 0.0139, and from 0.0130 to 0.0144 on the two chains. The two `--sample-chains` rows were run before the re-ingest, on the same rows. Training is not bit-reproducible: the two runs of the default command gave 0.0138 and 0.0136, the two of `--strict` 0.0141 and 0.0139.
+- The mean is held up by the 4 MBL-090 rows with the RF off: their `q` is noise, which no model reconstructs. The median falls by a factor of 3 to 4.
+- The scale matters. Normalised with the deviation of all the training rows (106.35 instead of 39.73), the same reconstruction reads 0.0019. Compare numbers on one scale.
+- Thirty epochs on all rows with a batch of 256 gave 0.0143 (452 s on a laptop CPU). More passes did not help.
+
+### Inference
+
+```
+$ python inference_pipeline.py --key 16122602164 16122596526 HBL-050RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData
+deployment essanomaly running after 42 s, model version 2
+{'predictions': [[0.6469190320102919, True]]}
+
+$ python inference_pipeline.py --event 16122602164
+deployment essanomaly running after 0 s, model version 2
+event 16122602164: 328 rows scored by key in 0.3 s, 10 flagged
+   event_id    cycle_id                                   pv_base    score  flagged
+16122602164 16122596526 MBL-090RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.685356     True
+16122602164 16122596526 HBL-040RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.669337     True
+16122602164 16122596526 MBL-080RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.668712     True
+16122602164 16122596526 HBL-010RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.665018     True
+16122602164 16122596526 MBL-060RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.664706     True
+16122602164 16122596526 MBL-070RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.664365     True
+16122602164 16122596526 HBL-030RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.663034     True
+16122602164 16122596526 HBL-020RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.654557     True
+16122602164 16122596526 MBL-050RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.651936     True
+16122602164 16122596526 HBL-050RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData 0.646919     True
+```
+
+The first run creates the deployment: 47 s in all. The second reuses it: 4 s in all, 328 keys in one request. The ten flagged rows are the ten chains whose pulse was cut at cycle `16122596526`; the local `model.pkl` gives the same scores. The same call from the command line:
+
+```
+$ hops deployment predict essanomaly --data '{"instances": [{"event_id": 16122602164, "cycle_id": 16122596526, "pv_base": "HBL-050RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData"}, {"event_id": 16122602164, "cycle_id": 16122596512, "pv_base": "HBL-050RFC:RFS-DIG-101:Dwn0-CmpSDS-PMData"}]}'
+{
+  "predictions": [
+    [
+      0.6469190320102919,
+      true
+    ],
+    [
+      0.46705529406673735,
+      false
+    ]
+  ]
+}
+```
+
+A deployment keeps the model version it was created with. To serve a newer one, delete it (`hops deployment delete essanomaly`) and run the inference pipeline again.
+
+## Client behaviour handled in the code
+
+- `fv.training_data(primary_key=True)` and `fv.get_batch_data(primary_key=True, event_time=True)` return the keys and the event time as `<project>_<feature group>_<version>_<name>`. `training_pipeline.py` renames them back.
+- `feature_pipeline.py` and the autoencoder drop repeated keys after reading. The groups held 1,872 keys four times until the re-ingest of 12 October; the guard now drops nothing.
+- `mr.get_model(name)` without a version returns version 1. `inference_pipeline.py` takes the highest version unless `--model-version` is given.
+
+## Not verified
+
+- The training pipeline from the project terminal. The feature pipeline and the inference pipeline ran there; the terminal has scikit-learn 1.8.0 and no `torch` until you install it.
+- Training from a laptop outside the cluster's network. The laptop used here was on it.
+- Anything on `ess_sds_channel_stats` beyond reading it (497,659 rows).
 
 ## Open questions
 
-- What `I`/`Q` (`Cmp0`/`Cmp1`) and `trig_code` mean physically: for the case holder.
-- The organisers' repository has no license file; check reuse terms of the sample before publishing slides with its plots.
+- What `i` and `q` (`Cmp0`, `Cmp1`) and `trig_code` mean physically: for the case holder. In this data `trig_code` is 14 on the 269 rows with the RF off and 15 everywhere else, so it is no fault label here.
+- Whether the 14 cut pulses are trips, and what cut them.
 
 ## Full archive on CC-IN2P3
 
-`cca/` builds the public sample's table for the whole SDS archive (108 events, 49 GB of tars), next to the data, as a SLURM job submitted from Hopsworks. The lecture programs above are unchanged and keep using the sample.
+`cca/` builds the public sample's table for the whole SDS archive (108 events, 49 GB of tars), next to the data, as a SLURM job submitted from Hopsworks. The lecture programs above read the two feature groups it fills.
 
 | file | runs | does |
 |---|---|---|
@@ -165,8 +254,8 @@ Fixes made on the way:
 
 | feature group | key | rows | what |
 |---|---|---|---|
-| `ess_llrf_waveforms` | `event_id, cycle_id, pv_base` | 58,458 | the sample's schema for every event, cycle and RF section (`DIG-101:Dwn0`), `i` and `q` at 256 points, `in_sample` and `in_sample_holdout` |
-| `ess_sds_channel_stats` | `event_id, cycle_id, pv_base` | 548,194 | full-resolution statistics of every RF chain per cycle |
+| `ess_llrf_waveforms` | `event_id, cycle_id, pv_base` | 52,842 | the sample's schema for every event, cycle and RF section (`DIG-101:Dwn0`), `i` and `q` at 256 points, `in_sample` and `in_sample_holdout` |
+| `ess_sds_channel_stats` | `event_id, cycle_id, pv_base` | 497,659 | full-resolution statistics of every RF chain per cycle |
 
 The key has `pv_base` because a cycle has many chains here; the sample has one. The 210 sample rows are in `ess_llrf_waveforms` and match to float32 rounding; the 42 rows the organisers score on carry `in_sample_holdout`, so leave them out of training.
 
