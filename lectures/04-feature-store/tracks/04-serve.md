@@ -46,7 +46,7 @@ Each use case folder holds the same three pipelines on its own data:
 | Folder | Feature pipeline | Training pipeline | Inference pipeline |
 |---|---|---|---|
 | `usecases/ess` | waveform features of every cycle and chain | IsolationForest, the challenge autoencoder | scores cycles by key |
-| `usecases/clara` | Cheetah captures | MLP surrogate | Bayesian optimisation on the deployment |
+| `usecases/clara` | Cheetah captures (the Easy objective) | MLP surrogate | Bayesian optimisation on the deployment |
 | `usecases/clara-camera` | real camera captures | extra trees surrogate | optimiser on the deployment, checked on real bursts |
 | `usecases/pallas` | the Smilei pack | Gaussian process, gradient boosting | search for a target beam |
 
@@ -68,4 +68,6 @@ predicted: E_med 204.6 MeV, dE_mad 0.034, q_end 66.9 pC (loss 0.0347)
 
 It deploys the direct surrogate as `pallasdirectb` and lets an optimiser call it 60 times, about seven and a half minutes in all. The proposal changes with the machine that runs the optimiser, and campaign B already holds real runs with a lower loss (config 5746, 0.0318). Stop the deployment afterwards: `hops deployment stop pallasdirectb`.
 
-`usecases/ess` and `usecases/clara-camera` run on the real feature groups the same way, from a project of your own; each README gives the commands and the results. `usecases/clara` is the earlier draft on Cheetah simulations.
+`usecases/ess` and `usecases/clara-camera` run on the real feature groups the same way, from a project of your own. `usecases/clara` is the optimisation challenge's Easy objective, on the Cheetah simulation.
+
+Your challenge is scored by its own script (`score.py`, `pallas_score.py`) and logged to Weights & Biases: see `GRADING.md` at the root of the repository.

@@ -1,6 +1,6 @@
 # CLARA cameras: a surrogate and an optimiser on real captures
 
-Feature, training and inference pipelines on the real CLARA camera archive. The Cheetah version of the same steps is `../clara`.
+Feature, training and inference pipelines on the real CLARA camera archive. The challenge's Easy objective is on the Cheetah simulation: that one is `../clara`.
 
 ## Data
 
