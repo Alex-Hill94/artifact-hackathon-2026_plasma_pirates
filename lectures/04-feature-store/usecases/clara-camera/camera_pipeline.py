@@ -109,6 +109,7 @@ def read_file(path: str) -> list[dict]:
     if not name:
         return []
     camera, year = name["camera"], int(name["date"][:4])
+    file_id = os.path.splitext(os.path.basename(path))[0]
     rel = os.path.relpath(path, ARCHIVE)
     scan = os.path.dirname(rel).split(os.sep)[3:]  # past YYYY/M/D
     rows = []
@@ -120,8 +121,9 @@ def read_file(path: str) -> list[dict]:
             pix_mm = float(attrs.get(f"{camera}:ANA:PixMM_RBV", np.nan))
             reading = spot(frame, pix_mm)
             row = {
-                "capture_id": f"{os.path.splitext(os.path.basename(path))[0]}_{capture}",
+                "capture_id": f"{file_id}_{capture}",
                 "event_ts": event_ts(text(attrs["Event Timestamp"]), year),
+                "file_id": file_id,
                 "camera": camera,
                 "scan": "/".join(scan),
                 "source_file": rel,
