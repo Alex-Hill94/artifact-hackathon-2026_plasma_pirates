@@ -56,3 +56,27 @@ hops job deploy clara_camera_captures camera_pipeline.py --env clara-camera \
 2 files of `2026/3/19/S07 Quad 03 Scans` (CLA-S07-DIA-CAM-03), read through the mount on the hackathon cluster: 20 captures in 2 s, all with a beam, 24 SETI columns. Spot about 0.29 mm (x) by 0.09 mm (y) RMS, centroid near (+0.17, -0.16) mm, 40 to 110 saturated pixels per frame.
 
 Cluster run, project `aissai26_clara`, job `clara_camera_captures` in environment `clara-camera`: the whole scan, 161 files, 1,610 captures, all with a beam, inserted into `clara_camera_captures` v1 in about 5 minutes. The data preview shows the thumbnails.
+
+## Full archive on CC-IN2P3
+
+`cca/` holds the version that processes the whole archive (17,885 files, 2.17 TB) next to the data, as a SLURM job submitted from Hopsworks. The raw frames never leave CC-IN2P3.
+
+| file | runs | does |
+|---|---|---|
+| `cca/extract_captures.sh` | on CC-IN2P3, SLURM job `clara_capture_extract` (64 cores, 128 GB) | reads every HDF5 file, writes `captures.parquet`, `files.parquet` and `manifest.json` to `/sps/m4cast/hopsworks/clara/` |
+| `cca/ingest_full.py` | in Hopsworks, Python job `clara_full_ingest` | reads them at `/m4cast-results/clara/`, inserts the two feature groups |
+
+Differences from `camera_pipeline.py`: moments also in pixels (`mu_x_px`...), since some cameras have no `PixMM_RBV`; saturation level from the frame type (uint8 or uint16); every `SETI`, `READI`, `GETSETI` and `RPOWER` PV as a column, null where a file has none; no thumbnail per capture.
+
+| feature group | key | rows | what |
+|---|---|---|---|
+| `clara_camera_captures` | `capture_id` | 225,421 | one row per capture |
+| `clara_camera_files` | `file_id` | 17,878 | one row per HDF5 file: mean and shot-to-shot spread of the moments, PV medians, thumbnail of the mean frame |
+
+```bash
+hops files upload cca/extract_captures.sh Resources/jobs/clara_capture_extract
+# create the SLURM job in the UI (script above, args: --archive <claraserv3 dir> --out /sps/m4cast/hopsworks/clara), run it
+hops job deploy clara_full_ingest cca/ingest_full.py --run --wait
+```
+
+Run of 2026-10-12, project `m4cast_clara`: 41 min on 64 cores, 7 files do not open (listed in `manifest.json`). The files record no magnet PV downstream of S02.

@@ -153,3 +153,21 @@ Fixes made on the way:
 
 - What `I`/`Q` (`Cmp0`/`Cmp1`) and `trig_code` mean physically: for the case holder.
 - The organisers' repository has no license file; check reuse terms of the sample before publishing slides with its plots.
+
+## Full archive on CC-IN2P3
+
+`cca/` builds the public sample's table for the whole SDS archive (108 events, 49 GB of tars), next to the data, as a SLURM job submitted from Hopsworks. The lecture programs above are unchanged and keep using the sample.
+
+| file | runs | does |
+|---|---|---|
+| `cca/extract_sds.sh` | on CC-IN2P3, SLURM job `ess_sds_extract` (16 cores, 96 GB, 10 workers) | reads the parquet members inside the tars in place, writes `llrf_waveforms.parquet`, `channel_stats.parquet` and `manifest.json` to `/sps/m4cast/hopsworks/ess/` |
+| `cca/ingest_full.py` | in Hopsworks, Python job `ess_full_ingest` | reads them at `/m4cast-results/ess/`, inserts the two feature groups |
+
+| feature group | key | rows | what |
+|---|---|---|---|
+| `ess_llrf_waveforms` | `event_id, cycle_id, pv_base` | 58,458 | the sample's schema for every event, cycle and RF section (`DIG-101:Dwn0`), `i` and `q` at 256 points, `in_sample` and `in_sample_holdout` |
+| `ess_sds_channel_stats` | `event_id, cycle_id, pv_base` | 548,194 | full-resolution statistics of every RF chain per cycle |
+
+The key has `pv_base` because a cycle has many chains here; the sample has one. The 210 sample rows are in `ess_llrf_waveforms` and match to float32 rounding; the 42 rows the organisers score on carry `in_sample_holdout`, so leave them out of training.
+
+Run of 2026-10-12, project `m4cast_ess`: 17 min. With 16 workers on 48 GB the job runs out of memory (one post-mortem member decodes to more than 1 GB).
