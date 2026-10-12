@@ -30,11 +30,12 @@ Then your challenge: `usecases/` holds a feature, a training and an inference pi
 ```
 04-feature-store/
 ├── tracks/                 00 to 04, and own_project.py (tracks 03 and 04 in one script)
+├── usecases/air-quality/   the concept slides' case: public PM2.5 and weather, a forecast, lookup by station
 ├── usecases/ess/           anomaly detection: waveform features, IsolationForest, scoring by key
 ├── usecases/clara/         optimisation, Easy objective: Cheetah captures, surrogate, optimiser on the deployment
 ├── usecases/clara-camera/  optimisation: real camera captures, surrogate, optimiser checked on real bursts
 ├── usecases/pallas/        surrogate models: the Smilei pack, two surrogates, a search
-├── data/, generators/      SPIRAL2 LLRF release and stream, used by the lecture's concept slides
+├── data/, generators/      public air quality and weather, the SPIRAL2 LLRF release and its stream
 └── requirements.txt        the Hopsworks client the cluster runs
 ```
 
@@ -42,7 +43,9 @@ Then your challenge: `usecases/` holds a feature, a training and an inference pi
 
 The challenge datasets, as feature groups in the projects `m4cast_ess`, `m4cast_clara` and `m4cast_pallas`; row counts are in [track 01](tracks/01-read.md). The raw files stay at CC-IN2P3: the rows were computed there and only the rows came to the cluster. Cite each dataset as its challenge README asks.
 
-The concept slides also use SPIRAL2 LLRF Fault Diagnosis: Structured Results Data (V7). A. Ghribi, P. Lassalle, M. Dalibard-Brun, M. Di Giacomo (GANIL), F. Bouly (CNRS). Zenodo [22729653](https://zenodo.org/records/22729653), MIT license. Pipeline: [aghribi/LLRF_SP2_pipeline](https://github.com/aghribi/LLRF_SP2_pipeline).
+The concept slides use public air quality data: hourly PM2.5 of the French regulatory stations, LCSQA and Ineris, [data.gouv.fr](https://www.data.gouv.fr/datasets/donnees-temps-reel-de-mesure-des-concentrations-de-polluants-atmospheriques-reglementes-1/), Licence Ouverte 2.0, and weather from [Open-Meteo](https://open-meteo.com/), CC BY 4.0.
+
+The SPIRAL2 track uses SPIRAL2 LLRF Fault Diagnosis: Structured Results Data (V7). A. Ghribi, P. Lassalle, M. Dalibard-Brun, M. Di Giacomo (GANIL), F. Bouly (CNRS). Zenodo [22729653](https://zenodo.org/records/22729653), MIT license. Pipeline: [aghribi/LLRF_SP2_pipeline](https://github.com/aghribi/LLRF_SP2_pipeline).
 
 ## Additional resources
 
