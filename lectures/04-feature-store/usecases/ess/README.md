@@ -118,7 +118,7 @@ read 52842 rows in 6 s, 0 repeated keys dropped
 inserted 52842 rows into ess_waveform_features v1 in 29 s
 ```
 
-43 s in all from the laptop. From the terminal of the project: read 3 s, features 15 s, insert 9 s. As the job `ess_features`: about one minute from submission to the end.
+43 s in all from the laptop. From the terminal of the project, in a clone of this branch: read 2 s, features 15 s, insert 10 s. As the job `ess_features`: about one minute from submission to the end.
 
 ### Anomaly model
 
