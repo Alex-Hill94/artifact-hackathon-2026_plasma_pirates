@@ -2,6 +2,8 @@
 
 Steering and focusing through section S04 of CLARA (Daresbury), the Easy objective of the optimisation challenge, built as three programs that share only the feature store and the model registry.
 
+Every capture here is simulated with Cheetah. The same three steps on the real camera archive (`m4cast_clara`, 225,421 captures) are in `../clara-camera`: real quadrupole scans in S02, the last section whose magnets the camera files record. S04 and everything downstream still need this simulation.
+
 ## Source
 
 All inputs are the organisers' public files in `challenges/optimisation/` (upstream commit `de9c997f35dffc4b359050ad9298c75e065366f1`):
@@ -24,8 +26,8 @@ Cite CLARA as: Snedden, E. W., et al. "Specification and design for full energy 
 - Synthetic: every capture. Settings are drawn uniformly inside the real range around the reference tune (`--spread 1.0` = reference plus or minus half the range, clipped to it), converted to `SETI` amps with `utils.py`, applied with `utils.update_cheetah_element`, tracked with Cheetah. Each row carries `synthetic=True`, `lattice_hash` (SHA-1 of `CLARA_cheetah.json`), `cheetah_version`, `campaign`, `beam_seed`, `noise_fraction`.
 - The screen reading follows `score.py`: moments over the particles on the camera chip, relative to its centre; below 10 % of the beam on the chip there is no reading (`beam_lost=True`, moments null).
 - Camera noise: `--noise-fraction` adds Gaussian noise of that fraction of the spot size to each moment, as the kickoff notebook's `NOISE_FRACTION`. No public file gives a value for CLARA screens, so the default is 0.
-- The real `clara_s07_sample.parquet` (camera `CLA-S07-DIA-CAM-04`) is not public. These rows have the same shape (magnet `SETI` settings paired with a centroid and RMS size) for S04.
-- Nothing is read from CC-IN2P3 or the CLARA archiver.
+- The real captures are the feature groups `clara_camera_captures` and `clara_camera_files` in `m4cast_clara`. They record no magnet downstream of S02, so no real row pairs the S04 magnets with a spot. These rows have that shape (magnet `SETI` settings paired with a centroid and RMS size) for S04.
+- Nothing in this folder is read from CC-IN2P3 or the CLARA archiver.
 
 ## FTI map
 
