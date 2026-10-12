@@ -5,7 +5,7 @@
 
 ## Abstract
 
-Feature, training and inference pipelines: three independent programs sharing one data layer. We build all three on real accelerator data, the SPIRAL2 LLRF fault diagnosis release from GANIL, then point your own challenge data at the same pattern. Everything runs from a terminal, yours or the cluster's, by hand or through a coding agent.
+Feature, training and inference pipelines: three independent programs sharing one data layer. We run all three on the real challenge data, ESS, CLARA and PALLAS, served as feature groups from the hackathon cluster, then you take the same pattern into your own project. Everything runs from a terminal, yours or the cluster's, by hand or through a coding agent.
 
 ## Slides
 
@@ -13,33 +13,36 @@ Feature, training and inference pipelines: three independent programs sharing on
 
 ## Tracks
 
-| # | Track | Who | Time |
-|---|---|---|---|
-| 00 | [Setup](tracks/00-setup.md): `hops setup`, laptop and cluster terminal, agents | everyone | 10 min |
-| 01 | [Ingest](tracks/01-ingest.md): LLRF events to feature groups | everyone | 20 min |
-| 02 | [Share](tracks/02-share.md): read the organisers' store, publish yours | everyone | 15 min |
-| 03 | [Train](tracks/03-train.md): feature view, time split, model registry | anomaly teams | 20 min |
-| 04 | [Serve](tracks/04-serve.md): live events, online features, deployment | anomaly teams | 20 min |
-| 05 | [Simulation](tracks/05-simulation.md): Cheetah runs to surrogate to optimiser | optimisation, surrogate teams | 30 min |
+The cluster is `https://aissai26.hops.live`. Every command in the tracks was run against it as a participant account.
 
-Monday: talk, then 00 and 01 together. Tuesday: 02 together, then 03 + 04 or 05 per challenge.
+| # | Track | Where | Time |
+|---|---|---|---|
+| 00 | [Setup](tracks/00-setup.md): Auth0 login, `hops setup`, laptop and cluster terminal, agents | laptop | 10 min |
+| 01 | [Read](tracks/01-read.md): the real ESS, CLARA and PALLAS feature groups | laptop | 10 min |
+| 02 | [Train](tracks/02-train.md): feature view, training data, model registry | laptop | 15 min |
+| 03 | [Your project](tracks/03-your-project.md): your features next to the real ones | cluster terminal | 20 min |
+| 04 | [Serve](tracks/04-serve.md): deploy and call your model | cluster terminal | 15 min |
+
+Then your challenge: `usecases/` holds a feature, a training and an inference pipeline per challenge.
 
 ## Layout
 
 ```
 04-feature-store/
-├── data/prepare_llrf.py        Zenodo 22729653 → parquet, one file per feature group
-├── generators/llrf_stream.py   live LLRF events resampled from the real release
-├── generators/sim_campaign.py  Cheetah quadrupole scan, one row per run
-├── tracks/                     00 to 05
-└── requirements.txt
+├── tracks/                 00 to 04, and own_project.py (tracks 03 and 04 in one script)
+├── usecases/ess/           anomaly detection: waveform features, IsolationForest, scoring by key
+├── usecases/clara/         optimisation: Cheetah captures, surrogate, optimiser on the deployment
+├── usecases/clara-camera/  optimisation: real camera captures from the CC-IN2P3 archive
+├── usecases/pallas/        surrogate models: the Smilei pack, two surrogates, a search
+├── data/, generators/      SPIRAL2 LLRF release and stream, used by the lecture's concept slides
+└── requirements.txt        the Hopsworks client the tracks were tested with
 ```
 
 ## Data
 
-SPIRAL2 LLRF Fault Diagnosis: Structured Results Data (V7). A. Ghribi, P. Lassalle, M. Dalibard-Brun, M. Di Giacomo (GANIL), F. Bouly (CNRS). Zenodo [22729653](https://zenodo.org/records/22729653), MIT license. Pipeline: [aghribi/LLRF_SP2_pipeline](https://github.com/aghribi/LLRF_SP2_pipeline).
+The challenge datasets, as feature groups in the projects `m4cast_ess`, `m4cast_clara` and `m4cast_pallas`; row counts are in [track 01](tracks/01-read.md). The raw files stay at CC-IN2P3: the rows were computed there and only the rows came to the cluster. Cite each dataset as its challenge README asks.
 
-Synthetic events from `llrf_stream.py` are resampled from this release and flagged `synthetic=True`.
+The concept slides also use SPIRAL2 LLRF Fault Diagnosis: Structured Results Data (V7). A. Ghribi, P. Lassalle, M. Dalibard-Brun, M. Di Giacomo (GANIL), F. Bouly (CNRS). Zenodo [22729653](https://zenodo.org/records/22729653), MIT license. Pipeline: [aghribi/LLRF_SP2_pipeline](https://github.com/aghribi/LLRF_SP2_pipeline).
 
 ## Additional resources
 

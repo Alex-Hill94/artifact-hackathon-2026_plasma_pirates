@@ -1,90 +1,53 @@
-# 04 · Serve: live events, online features, a running model
+# 04 · Deploy and call your model
 
-20 minutes. Stream synthetic events into the same feature groups, deploy the model from track 03, score events by id as they arrive.
-
-## Stream
+15 minutes, in the terminal of your own project. The model of track 03 becomes an HTTP endpoint.
 
 ```bash
-python generators/llrf_stream.py --data data/llrf --n 3            # look first
-python generators/llrf_stream.py --data data/llrf --insert --follow
+python tracks/own_project.py
 ```
 
-Each event copies a real SPIRAL2 event from the same cavity and class, with a new `event_id`, the current time, `synthetic=True` and `source_event_id` pointing at the original. Real inter-event gaps per cavity, compressed 3600x by default (`--speedup`). `--hot CMA07_CAV1` makes one cavity fault five times more often than it really does.
-
-The generator writes online only. Live rows are in RonDB within a second and the offline copy follows on the materialisation job's schedule:
-
-```bash
-hops job list
+```
+deployment running after 74 s
+predict {'predictions': [29.86145796488902]} true 31.26613796465147
 ```
 
-## Deploy
-
-The model is registered with its feature view, so a short predictor script does the rest: take an `event_id`, look up the feature vector in the online store, predict. Save it as `predictor.py`:
+## What it does
 
 ```python
-import os
-import joblib
+entry = project.get_model_registry().python.create_model(
+    name="p1_from_beam", metrics={"r2": r2}, feature_view=fv, input_example=X_train.head(1)
+)
+entry.save("model")                      # the folder with model.pkl
 
-
-class Predictor:
-    def __init__(self, model):
-        self.model = joblib.load(os.path.join(os.environ["MODEL_FILES_PATH"], "model.pkl"))
-        # In a deployment this also initialises online lookups for the feature view.
-        self.fv = model.get_feature_view()
-
-    def predict(self, inputs):
-        return self.model.predict(self.fv.get_feature_vectors(entry=inputs, return_type="pandas")).tolist()
-```
-
-```python
-import os
-import hopsworks
-
-project = hopsworks.login()
-mr = project.get_model_registry()
-entry = mr.get_model("llrf_fault", version=1)
-
-uploaded = project.get_dataset_api().upload("predictor.py", "Resources", overwrite=True)
-deployment = entry.deploy(name="llrffault", script_file=os.path.join("/Projects", project.name, uploaded))
+script = project.get_dataset_api().upload("usecases/pallas/predictor.py", "Resources", overwrite=True)
+deployment = entry.deploy(name="p1frombeam", script_file=f"/Projects/{project.name}/{script}")
 deployment.start(await_running=600)
+deployment.predict(inputs=X_test.head(1).values.tolist())
 ```
 
-```bash
-hops deployment list
-hops deployment status llrffault
-```
+- A Python model needs a predictor script on this version: `deploy()` without `script_file` is refused. `usecases/pallas/predictor.py` loads `model.pkl` and calls `predict`; it fits any scikit-learn model saved that way.
+- A second run reuses the deployment `p1frombeam` if it exists. Delete it to serve a newer model version.
+- scikit-learn is pinned in `requirements.txt` to the serving image's version, so a model trained on your laptop loads in the deployment.
+- Call the deployment from the terminal or from a job. The serving gateway is not reachable from outside the cluster.
 
-## Score
+## Clean up
 
 ```python
-live_id = "syn_cma07_cav1_..."          # copy one from the generator output
-deployment.predict(inputs=[{"event_id": live_id}])
+deployment.stop()
+deployment.delete()
 ```
 
-Same call on a real event, a September 2025 fault (Absence autorisation RF, RF authorization absent):
+A running deployment holds a pod. Stop it when you are done.
 
-```python
-deployment.predict(inputs=[{"event_id": "cma07_cav1_20250904T151333"}])
-# {'predictions': [1]}
-```
+## Next: your challenge
 
-Training read `llrf_physics` offline, from Delta, as it was on each label's date. Serving reads the same features online, from RonDB, as they are now. One definition, two stores, no skew.
+Each use case folder holds the same three pipelines on its own data:
 
-Check against the truth: `source_event_id` tells you which real event a synthetic one copies, and `llrf_labels` holds its label.
+| Folder | Feature pipeline | Training pipeline | Inference pipeline |
+|---|---|---|---|
+| `usecases/ess` | cycles and waveform features | IsolationForest | scores new cycles by key |
+| `usecases/clara` | Cheetah captures | MLP surrogate | Bayesian optimisation on the deployment |
+| `usecases/clara-camera` | real camera captures | | |
+| `usecases/pallas` | the Smilei pack | Gaussian process, gradient boosting | search for a target beam |
 
-## Look up features directly
-
-```bash
-hops fv get llrf_fault --version 1 --entry "event_id=<live_id>"
-```
-
-## Stretch
-
-- Per-cavity health, a windowed aggregation: events and mean `microphonics_rms` over the last hour per cavity. Write it as `llrf_cavity_health` (primary key `cavity_id`, online) from a scheduled job:
-
-  ```bash
-  hops job deploy cavity_health cavity_health.py --cron "0 */5 * ? * *" --run
-  ```
-
-- Run the generator with `--hot` on one cavity and watch its health row move.
-- Stop the deployment when done: `hops deployment stop llrffault`.
+`usecases/pallas` runs on the full data in `m4cast_pallas` as it is. The ESS and CLARA pipelines were written on the public samples: on the real feature groups the ESS key gains `pv_base`, and the CLARA rows are camera captures instead of simulated ones.
