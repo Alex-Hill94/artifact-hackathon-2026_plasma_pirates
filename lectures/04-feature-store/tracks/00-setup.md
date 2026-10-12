@@ -47,8 +47,11 @@ In the Hopsworks UI: your project, then **Terminal**, then **Start Terminal**. T
 ```bash
 git clone -b lecture-04-feature-store https://github.com/MagicLex/artifact-hackathon-2026
 cd artifact-hackathon-2026/lectures/04-feature-store
+uv pip install -r requirements.txt
 hops fg list
 ```
+
+The install takes a few seconds: the Hopsworks client is already there, it adds the libraries the use cases need (scikit-optimize for the PALLAS search). A terminal session keeps what you install until it is stopped.
 
 The challenge files are mounted read-only in every terminal: `/m4cast` (samples, the PALLAS pack) and `/m4cast-results` (the tables the feature groups were filled from).
 

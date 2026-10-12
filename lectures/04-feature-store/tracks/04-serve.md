@@ -50,4 +50,22 @@ Each use case folder holds the same three pipelines on its own data:
 | `usecases/clara-camera` | real camera captures | | |
 | `usecases/pallas` | the Smilei pack | Gaussian process, gradient boosting | search for a target beam |
 
-`usecases/pallas` runs on the full data in `m4cast_pallas` as it is. The ESS and CLARA pipelines were written on the public samples: on the real feature groups the ESS key gains `pv_base`, and the CLARA rows are camera captures instead of simulated ones.
+`usecases/pallas` runs on the full data as it is. In the terminal of your own project, after `training_pipeline.py --store m4cast_pallas_featurestore`:
+
+```bash
+cd usecases/pallas
+python inference_pipeline.py --target-mev 200 --min-charge-pc 20
+```
+
+```
+p_max       6999.7362
+cn2_max        0.0565
+l_inj          0.7427
+dip_frac       0.3341
+x_of         889.6666
+predicted: E_med 204.6 MeV, dE_mad 0.034, q_end 66.9 pC (loss 0.0347)
+```
+
+It deploys the direct surrogate as `pallasdirectb` and lets an optimiser call it 60 times, about seven and a half minutes in all. Stop the deployment afterwards: `hops deployment stop pallasdirectb`.
+
+The ESS and CLARA pipelines were written on the public samples: on the real feature groups the ESS key gains `pv_base`, and the CLARA rows are camera captures instead of simulated ones.

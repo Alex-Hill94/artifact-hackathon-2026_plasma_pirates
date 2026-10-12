@@ -20,6 +20,9 @@ same split is printed beside it.
 
     # from the feature store, register both models with their feature views
     python training_pipeline.py
+
+    # in a project of your own: read the feature groups from the shared store, keep views and models here
+    python training_pipeline.py --store m4cast_pallas_featurestore
 """
 
 import argparse
@@ -139,6 +142,7 @@ def main() -> None:
     ap.add_argument("--fg-version", type=int, default=1)
     ap.add_argument("--fv-version", type=int, default=1)
     ap.add_argument("--only", choices=list(OBJECTIVES), help="train one objective")
+    ap.add_argument("--store", metavar="NAME", help="read the feature groups from this shared feature store")
     args = ap.parse_args()
 
     objectives = {k: v for k, v in OBJECTIVES.items() if args.only in (None, k)}
@@ -154,9 +158,10 @@ def main() -> None:
 
     project = hopsworks.login()
     fs = project.get_feature_store()
+    source = project.get_feature_store(name=args.store) if args.store else fs
     mr = project.get_model_registry()
     for name, spec in objectives.items():
-        fg = fs.get_feature_group(spec["fg"], version=args.fg_version)
+        fg = source.get_feature_group(spec["fg"], version=args.fg_version)
         query = fg.select(spec["features"] + spec["labels"]).filter(rows_filter(name, fg))
         fv = fs.get_or_create_feature_view(
             name=name, version=args.fv_version, query=query, labels=spec["labels"], description=spec["description"]
