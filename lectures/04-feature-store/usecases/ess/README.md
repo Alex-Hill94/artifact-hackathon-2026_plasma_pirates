@@ -107,7 +107,7 @@ python training_pipeline.py --only ess_llrf_autoencoder --strict
 
 ## Results
 
-Run on 2026-10-12 against `https://aissai26.hops.live` (Hopsworks 5.1.1), as a participant account, in the project `tester_ess` with `m4cast_ess_featurestore` shared read-only. Client from `requirements.txt`, scikit-learn 1.8, torch 2.14, Python 3.11. The real groups were re-ingested without duplicate keys at 13:46 that day; the feature pipeline, the autoencoder and the inference were run again afterwards, and the logs below are from those runs where a count appears. The rows themselves did not change, so the anomaly model's numbers are the ones of the morning runs. Commands were run from a laptop on the cluster's network; the insert and the inference pipeline also from the terminal of the project.
+Hopsworks 5.1.1, scikit-learn 1.8, torch 2.14, Python 3.11, in a project of your own with `m4cast_ess_featurestore` shared read-only. The anomaly model was trained before the real groups were re-ingested without duplicate keys on 2026-10-12; the rows themselves did not change.
 
 ### Feature pipeline
 

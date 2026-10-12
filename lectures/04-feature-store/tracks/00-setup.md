@@ -20,7 +20,7 @@ uv pip install -r requirements.txt
 hops setup --host https://aissai26.hops.live
 ```
 
-`requirements.txt` pins the Hopsworks client the workshop was tested with. The client on PyPI ignores the key that `hops setup` stores, so `hopsworks.login()` would ask for one.
+`requirements.txt` pins the Hopsworks client the cluster runs. The client on PyPI ignores the key that `hops setup` stores, so `hopsworks.login()` would ask for one.
 
 `hops setup` opens the browser. Pick a project, give the API key a name, confirm. The key lands in `~/.hops.toml` (mode 0600).
 

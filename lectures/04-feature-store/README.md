@@ -13,7 +13,7 @@ Feature, training and inference pipelines: three independent programs sharing on
 
 ## Tracks
 
-The cluster is `https://aissai26.hops.live`. Every command in the tracks was run against it as a participant account.
+The cluster is `https://aissai26.hops.live`.
 
 | # | Track | Where | Time |
 |---|---|---|---|
@@ -35,7 +35,7 @@ Then your challenge: `usecases/` holds a feature, a training and an inference pi
 ├── usecases/clara-camera/  optimisation: real camera captures, surrogate, optimiser checked on real bursts
 ├── usecases/pallas/        surrogate models: the Smilei pack, two surrogates, a search
 ├── data/, generators/      SPIRAL2 LLRF release and stream, used by the lecture's concept slides
-└── requirements.txt        the Hopsworks client the tracks were tested with
+└── requirements.txt        the Hopsworks client the cluster runs
 ```
 
 ## Data
