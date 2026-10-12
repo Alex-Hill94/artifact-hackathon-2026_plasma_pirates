@@ -11,6 +11,7 @@ Every row carries slurm_job_id, the CC-IN2P3 job that computed it.
 
     python ingest_full.py                       # from /m4cast-results/clara
     python ingest_full.py --results <dir> --dry-run
+    python ingest_full.py --allow-partial       # insert although the job failed on some files
 """
 
 import argparse
@@ -25,6 +26,7 @@ def main() -> None:
     ap.add_argument("--results", type=Path, default=Path("/m4cast-results/clara"))
     ap.add_argument("--version", type=int, default=1)
     ap.add_argument("--dry-run", action="store_true", help="read and check, write nothing")
+    ap.add_argument("--allow-partial", action="store_true", help="insert even when the job failed on some files")
     args = ap.parse_args()
 
     manifest = json.loads((args.results / "manifest.json").read_text())
@@ -37,6 +39,8 @@ def main() -> None:
         print(f"  failed: {failure['file']}: {failure['error']}")
     if args.dry_run:
         return
+    if manifest["failed"] and not args.allow_partial:
+        raise SystemExit(f"{len(manifest['failed'])} files failed in job {job}: nothing inserted, pass --allow-partial to insert the rest")
 
     import hopsworks
 
