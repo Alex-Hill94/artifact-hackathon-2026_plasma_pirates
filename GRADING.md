@@ -42,9 +42,19 @@ from the leaderboard (they still log to W&B, Agora just won't match them to your
   `anomaly-hunters`, `the-outliers`, `fast-approximate`, `overfit-proud`, `laser-focused`,
   `plasma-pirates`)
 - **Auth:** each team has its own W&B API key (a service account, shared by the whole team —
-  no personal W&B account needed), handed out privately by the organizers. **Never commit
-  it** — put it in a local `.env` / shell export, never in a notebook cell you push:
-  `export WANDB_API_KEY=...` (or `wandb.login(key=...)` typed interactively, not hardcoded).
+  no personal W&B account needed). It's on `cca.in2p3.fr`, readable by your own CC-IN2P3
+  account (see the [access guide](access-guide.md) for getting one), at:
+  `/sps/m4cast/artifact_hackathon_2026/<challenge>/teams/<your-team-slug>/wandb_api_key.txt`
+  (`<challenge>` is `anomaly-detection`, `optimisation` or `surrogate-models`; `<your-team-slug>`
+  is the same slug as your `group` above). **Never commit it** — put it in a local `.env` /
+  shell export, never in a notebook cell you push:
+  ```
+  export WANDB_API_KEY=$(cat /sps/m4cast/artifact_hackathon_2026/<challenge>/teams/<your-team-slug>/wandb_api_key.txt)
+  ```
+  (or `wandb.login(key=...)` typed interactively, not hardcoded). That file is only
+  `chmod 640` on a shared NFS mount all participants can log into — it isn't private from
+  other teams the way a real secrets manager would be, so treat it as "don't hand it to
+  someone outside the hackathon," not as a strongly-guarded credential.
 - **Each run's config** should set:
   - `tier`: `"easy"` | `"medium"` | `"hard"` | `"optional"`
 - **Each run logs its score** under a challenge-specific key, read straight from that

@@ -14,7 +14,7 @@ until Monday morning.
 3. [CC-IN2P3 account](#3-cc-in2p3-account)
 4. [eDARI account + project attachment](#4-edari-account--project-attachment)
 5. [DALIA compute account & SSH key](#5-dalia-compute-account--ssh-key)
-6. (Optional) [Weights & Biases account](#6-optional-weights--biases-account)
+6. [Weights & Biases (for the leaderboard)](#6-weights--biases-for-the-leaderboard)
 
 ---
 
@@ -104,10 +104,11 @@ key *on `cca`* (not on your laptop), and always connect to DALIA from there.
    ssh -i ~/.ssh/<your_login>-DALIA <your_login>@dalia.idris.fr
    ```
 
-## 6. (Optional) Weights & Biases account
+## 6. Weights & Biases (for the leaderboard)
 
-If you'd like experiment tracking during your challenge, register for a
-free [Weights & Biases educational account](https://wandb.ai/site).
+No personal account needed. Each team logs with a shared W&B API key the organizers
+already created — see **"Logging to Weights & Biases"** in
+[`GRADING.md`](GRADING.md) for where to find your team's key and how to use it.
 
 ---
 
