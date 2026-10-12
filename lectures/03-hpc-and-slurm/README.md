@@ -240,5 +240,3 @@ sbatch train_model.sh
 - **IDRIS Helpdesk:** `assist@idris.fr`  
   ⚠️ **Important:** You must include `[Dalia]` in the email subject line.
 - **Hackathon Agora:** Post logs and questions to the hackathon channel for on-site mentor support.
-
---- END OF FILE README.md ---
