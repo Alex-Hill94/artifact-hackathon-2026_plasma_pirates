@@ -89,8 +89,7 @@ Project `aissai26_clara` on a Hopsworks 5.1.1 cluster, `hopsworks` 5.1.1 from Py
 
 The cluster split and fit differ from the laptop run. Here the optimiser pushed four knobs to the edge of the box, where the surrogate's centroid is off by about 170 um: the check is still 2.3x better than the reference tune, but 41 um worse than predicted. That gap is what the `bo_check` row is for: the next surrogate trains on it. A request with the reference tune returns `{'predictions': [[337.1, 487.6, 145.3, 251.4]]}`.
 
-## Verified
+## Notes
 
-- Laptop: all three programs in `--local` mode and the notebook with `LOCAL = True`, end to end.
-- Cluster: all three programs end to end, numbers above. The notebook's `LOCAL = False` path calls the same functions but was not run as a notebook.
+- The notebook's `LOCAL = False` path calls the same functions as the three programs but was not run as a notebook.
 - `Model.deploy` in `hopsworks` 5.1.1 has no `passed_features` and requires `script_file` for Python models, which is why this use case ships `predictor.py`.

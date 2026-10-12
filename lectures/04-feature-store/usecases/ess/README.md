@@ -232,7 +232,7 @@ A deployment keeps the model version it was created with. To serve a newer one, 
 - `feature_pipeline.py` and the autoencoder drop repeated keys after reading. The groups held 1,872 keys four times until the re-ingest of 12 October; the guard now drops nothing.
 - `mr.get_model(name)` without a version returns version 1. `inference_pipeline.py` takes the highest version unless `--model-version` is given.
 
-## Not verified
+## Not run
 
 - The training pipeline from the project terminal. The feature pipeline and the inference pipeline ran there; the terminal has scikit-learn 1.8.0 and no `torch` until you install it.
 - Training from a laptop outside the cluster's network. The laptop used here was on it.

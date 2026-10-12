@@ -158,9 +158,9 @@ hops job deploy pallas_features feature_pipeline.py --args "--insert --source /m
 
 The optimiser minimises `((E - target) / target)^2 + dE_mad + 10 * shortfall^2`, where shortfall is the relative charge deficit below `--min-charge-pc`. The search space is the range of the training rows, so the surrogate is never asked to extrapolate. Its answer is a proposal: run Smilei at those settings and insert the run as a new row of `pallas_campaign_b`.
 
-## Verified on the real data
+## Results on the real data
 
-On 2026-10-12, cluster `https://aissai26.hops.live` (Hopsworks 5.1.1), as a participant account (Auth0 login, Data scientist in `m4cast_pallas`, owner of the project `tester_pallas`), with the client pinned in `requirements.txt`, scikit-learn 1.8.0, scikit-optimize 0.10.2.
+Hopsworks 5.1.1, scikit-learn 1.8.0, scikit-optimize 0.10.2.
 
 Feature pipeline: job `pallas_features` in `m4cast_pallas`, execution 1050, 1 min 15 s. Its log:
 
@@ -177,9 +177,9 @@ pallas_b_moments: inserted 211360 rows in 8 s
 
 Reading each group back from a laptop takes 2 to 4 seconds. No group has an event time and none is online.
 
-Training pipeline: the numbers under Commands, from a laptop, in `m4cast_pallas` and in `tester_pallas` with `--store`. Registry metrics: `r2_e_med_mev` 0.9958, `r2_de_mad` 0.9372, `r2_q_end` 0.9991, `r2_mean` 0.9773 for `pallas_direct_b`; `r2_p_1` 0.9731, `r2_a_0` 0.9162, `r2_c_n2` 0.9613, `r2_mean` 0.9502 for `pallas_inverse_a`.
+Training pipeline: the numbers under Commands, from a laptop, in `m4cast_pallas` and in a project of your own with `--store`. Registry metrics: `r2_e_med_mev` 0.9958, `r2_de_mad` 0.9372, `r2_q_end` 0.9991, `r2_mean` 0.9773 for `pallas_direct_b`; `r2_p_1` 0.9731, `r2_a_0` 0.9162, `r2_c_n2` 0.9613, `r2_mean` 0.9502 for `pallas_inverse_a`.
 
-Inference pipeline, in the terminal of `tester_pallas`: the output under Commands. Run a second time there with the deployment already running, it gave the same settings and the same prediction in 7 min 13 s. Almost all of that time is the optimiser's own Gaussian process in the terminal pod: one request to the deployment answers in about 0.05 s.
+Inference pipeline, in the terminal of your project: the output under Commands. Run a second time there with the deployment already running, it gave the same settings and the same prediction in 7 min 13 s. Almost all of that time is the optimiser's own Gaussian process in the terminal pod: one request to the deployment answers in about 0.05 s.
 
 ```python
 deployment.predict(inputs=[[6999.7362, 0.0565, 0.7427, 0.3341, 889.6666]])
@@ -192,11 +192,11 @@ For scale, real runs of campaign B scored with the same loss: config 3195 (188.9
 
 The same search run from a laptop on the cluster's network, against the same deployment, ended elsewhere in 19 s: `p_max` 6999.7, `cn2_max` 0.0787, `l_inj` 0.7995, `dip_frac` 0.4320, `x_of` 1246.4, predicted 191.0 MeV, `dE_mad` 0.028, 55.3 pC, loss 0.0303. The Bayesian optimiser follows a different path once its own numerics differ between two machines. Treat one run as one proposal.
 
-Permissions, tested: in `m4cast_pallas` a Data scientist reads, creates feature views, reads training data and registers models. Creating a feature group or a deployment there answers 403.
+Permissions: in `m4cast_pallas` a Data scientist reads, creates feature views, reads training data and registers models. Creating a feature group or a deployment there answers 403.
 
-## Verified on the public sample, without a cluster
+## Results on the public sample, without a cluster
 
-On 2026-10-10, Python 3.12 venv with hopsworks 5.1.1, scikit-learn 1.8.0, scikit-optimize 0.10.2.
+Python 3.12, hopsworks 5.1.1, scikit-learn 1.8.0, scikit-optimize 0.10.2.
 
 `feature_pipeline.py --out` (HTTPS, and the same counts from the local sample folder):
 
@@ -236,11 +236,11 @@ predicted: E_med 192.0 MeV, dE_mad 0.037, q_end 60.1 pC (loss 0.0387)
 
 For scale, the closest real simulation in the sample is config 5746: 204 MeV, `dE_mad` 0.031, 65 pC.
 
-`notebook.ipynb` executed end to end in a scratch copy with the same outputs.
+`notebook.ipynb` gives the same outputs.
 
-## Verified on a cluster with the public sample
+## Results on a cluster with the public sample
 
-On 2026-10-10, Hopsworks 5.1.1, a rehearsal project that held the public sample, client from the same venv as above. These numbers are from the sample.
+Hopsworks 5.1.1. These numbers are from the sample.
 
 Feature pipeline, run as a Python job inside the cluster (`hops job deploy pallas_features feature_pipeline.py --args "--insert" --run --wait`, default environment): the job read the pack from GitHub over HTTPS and wrote the four groups, 6 s each, 59 s for the whole job. Read back: A 1,307 rows with 1,080 injected, B 529 with 286, trajectories 31,866, moments 21,160. `spec_common` is stored as `array<double>`.
 
@@ -273,7 +273,7 @@ Client behaviour found on the way, handled in the code:
 - `mr.get_model(name)` without a version returns version 1, not the latest. The inference pipeline takes the version with the best `r2_mean` unless `--model-version` is given.
 - `Model.deploy` in 5.1.1 has no `model_server` argument; a Python model with `script_file` gets the Python server.
 
-## Not verified
+## Not run
 
 - `hops job deploy pallas_features ... --args "--insert --source ..."` with the `/m4cast` source: the job's arguments are the ones shown in its execution, but the deploy command itself was last run on 2026-10-10 with the sample.
 - `--x-of 700` on the real data.
