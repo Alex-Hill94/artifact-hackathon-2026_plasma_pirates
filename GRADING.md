@@ -29,27 +29,43 @@ What the metric *is** differs by challenge, because the challenges differ:
 
 ## Logging to Weights & Biases
 
-Each team logs their score to a shared W&B project so progress is visible without manually
-collecting files.
+Each team logs to the shared W&B team (entity) **`artifact-hackathon-2026`**, one project per
+challenge, grouped by team so Agora-Conf's leaderboard can pick up your runs automatically.
+**The exact snippet for your team — entity, project and `group` already filled in — is on
+your team's page in Agora-Conf** (Hackathon guide → *Training runs and the leaderboard*);
+copy it from there rather than retyping it, since a wrong `group` silently drops your runs
+from the leaderboard (they still log to W&B, Agora just won't match them to your team).
 
-- **Project:** `aissai-hackathon-2026` (one shared project, all challenges and teams)
+- **Entity:** `artifact-hackathon-2026`
+- **Project:** one per challenge — `anomaly-detection`, `optimisation`, `surrogate-models`
+- **`group`:** your team's slug, exactly as shown on your team's page in Agora (e.g.
+  `anomaly-hunters`, `the-outliers`, `fast-approximate`, `overfit-proud`, `laser-focused`,
+  `plasma-pirates`)
+- **Auth:** each team has its own W&B API key (a service account, shared by the whole team —
+  no personal W&B account needed), handed out privately by the organizers. **Never commit
+  it** — put it in a local `.env` / shell export, never in a notebook cell you push:
+  `export WANDB_API_KEY=...` (or `wandb.login(key=...)` typed interactively, not hardcoded).
 - **Each run's config** should set:
-  - `challenge`: `"anomaly-detection"` | `"optimisation"` | `"surrogate-models"`
-  - `team`: your team name
   - `tier`: `"easy"` | `"medium"` | `"hard"` | `"optional"`
 - **Each run logs its score** under a challenge-specific key, read straight from that
   challenge's scoring script:
   - Anomaly detection: `anomaly/holdout_mse` (lower is better)
   - Surrogate models: `pallas/mean_r2` for R²-based tasks, or the task-specific key
     (`pallas/median_ratio` for particle clouds, `pallas/median_rel_l2_*` for fields) —
-    see `pallas_score.py`'s own output
-  - Optimisation: `optim/best_mm` (lower is better) and `optim/n_evals`
+    see `pallas_score.py`'s own output. The leaderboard ranks on `pallas/mean_r2`; log the
+    other keys too (for your own tracking), they just don't drive the ranking.
+  - Optimisation: `optim/best_mm` (lower is better, drives the ranking) and `optim/n_evals`
+    (logged alongside for context, not ranked on)
 
-Logging is one or two lines around your existing scoring call:
+Logging is one or two lines around your existing scoring call — replace `<your-team-slug>`
+with the slug from your team's page in Agora (the `project` below is for anomaly-detection;
+use `optimisation` or `surrogate-models` in the other challenges):
 
 ```python
-import wandb
-wandb.init(project="aissai-hackathon-2026", config={"challenge": "anomaly-detection", "team": "<your-team>", "tier": "easy"})
+import os, wandb
+wandb.login(key=os.environ["WANDB_API_KEY"])  # set once in your shell, never hardcoded
+wandb.init(entity="artifact-hackathon-2026", project="anomaly-detection",
+           group="<your-team-slug>", config={"tier": "easy"})
 wandb.log({"anomaly/holdout_mse": mean_mse})
 ```
 
