@@ -63,13 +63,11 @@ export PROJECT_DIR=/lustre/work/pdl18409/$USER
 
 # Redirect Apptainer caches and temporary files to Lustre
 export APPTAINER_CACHEDIR=$PROJECT_DIR/cache_apptainer
-export APPTAINER_TMPDIR=$PROJECT_DIR/tmp_apptainer
-mkdir -p $APPTAINER_CACHEDIR $APPTAINER_TMPDIR
+mkdir -p $APPTAINER_CACHEDIR
 
 # Redirect AI framework caches to Lustre
 export HF_HOME=$PROJECT_DIR/cache_huggingface
 export TRITON_HOME=$PROJECT_DIR/cache_triton
-export TMPDIR=$PROJECT_DIR/tmp
 
 # Load Slurm automatically (Slurm commands are not in PATH by default)
 module load slurm/slurm/24.11
