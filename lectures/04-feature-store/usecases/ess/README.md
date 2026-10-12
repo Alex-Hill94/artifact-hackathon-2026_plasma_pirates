@@ -232,7 +232,7 @@ A deployment keeps the model version it was created with. To serve a newer one, 
 
 ## Not run
 
-- The training pipeline from the project terminal. The feature pipeline and the inference pipeline ran there; the terminal has scikit-learn 1.8.0 and no `torch` until you install it.
+- The training pipeline from the cluster terminal. The feature pipeline and the inference pipeline ran there; the terminal has scikit-learn 1.8.0 and no `torch` until you install it.
 - Training from a laptop outside the cluster's network. The laptop used here was on it.
 - Anything on `ess_sds_channel_stats` beyond reading it (497,659 rows).
 
