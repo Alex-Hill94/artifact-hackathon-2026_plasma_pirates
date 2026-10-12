@@ -48,8 +48,11 @@ In the Hopsworks UI: your project, then **Terminal**, then **Start Terminal**. T
 git clone -b lecture-04-feature-store https://github.com/MagicLex/artifact-hackathon-2026
 cd artifact-hackathon-2026/lectures/04-feature-store
 uv pip install -r requirements.txt
+export OMP_NUM_THREADS=1
 hops fg list
 ```
+
+The terminal has one CPU and shows sixteen. Without `OMP_NUM_THREADS=1`, PyTorch and scikit-learn start sixteen threads on it and a one-minute training takes over twenty. Set it in every new terminal.
 
 The install takes a few seconds: the Hopsworks client is already there, it adds the libraries the use cases need (scikit-optimize for the PALLAS and CLARA searches). The ESS autoencoder also needs PyTorch, which is not in `requirements.txt`: `uv pip install torch --index-url https://download.pytorch.org/whl/cpu`, about 6 seconds in the terminal. A terminal session keeps what you install until it is stopped.
 

@@ -46,8 +46,8 @@ The same three lines read CLARA and PALLAS: change the project and the name.
 |---|---|
 | `m4cast_pallas.pallas_b_trajectories` | 3 s |
 | `m4cast_ess.ess_llrf_waveforms` | 5 to 6 s |
-| `m4cast_clara.clara_camera_captures` (193 columns) | 11 to 20 s |
-| `m4cast_clara.clara_camera_files` (a thumbnail per row) | 2 min |
+| `m4cast_clara.clara_camera_captures` (193 columns) | 11 to 23 s |
+| `m4cast_clara.clara_camera_files` (a thumbnail per row) | 16 s to 2 min |
 
 `clara_camera_files` is for the UI: its data preview shows the thumbnails. In code, read `clara_camera_captures`.
 

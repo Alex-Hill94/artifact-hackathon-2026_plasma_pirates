@@ -23,14 +23,20 @@ From a laptop, in `m4cast_pallas`:
 hops project use m4cast_pallas
 cd usecases/pallas
 python training_pipeline.py --only pallas_inverse_a     # 26 s
-python training_pipeline.py --only pallas_direct_b      # 2 min 27 s
+python training_pipeline.py --only pallas_direct_b      # 2 min 41 s
 ```
 
-In a project you own, with the real store shared in ([track 03](../../tracks/03-your-project.md)). Train from a laptop or the cluster terminal, deploy from the cluster terminal:
+In a project you own, with the real store shared in ([track 03](../../tracks/03-your-project.md)). Train from a laptop: on the terminal's single CPU the Gaussian process takes 10 minutes instead of 3.
+
+```bash
+hops project use <your_project>
+python training_pipeline.py --store m4cast_pallas_featurestore
+```
+
+Deploy and search from the cluster terminal:
 
 ```bash
 uv pip install -r ../../requirements.txt
-python training_pipeline.py --store m4cast_pallas_featurestore
 python inference_pipeline.py --target-mev 200 --min-charge-pc 20
 hops deployment stop pallasdirectb
 ```
@@ -67,7 +73,7 @@ pallas_direct_b      0.996   0.937  0.999
 linear baseline      0.946   0.244  0.829
 ```
 
-The search, 60 calls to the deployment, about 7 minutes:
+The search, 60 calls to the deployment, about 10 minutes:
 
 ```
 p_max       6999.7362

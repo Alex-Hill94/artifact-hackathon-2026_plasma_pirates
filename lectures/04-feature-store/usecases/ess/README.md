@@ -20,6 +20,7 @@ In `m4cast_ess` you read only. Run in a project you own, with the real store sha
 cd usecases/ess
 uv pip install -r ../../requirements.txt
 uv pip install torch --index-url https://download.pytorch.org/whl/cpu   # autoencoder only
+export OMP_NUM_THREADS=1                            # the terminal has one CPU
 
 python feature_pipeline.py --insert                 # 14 features per row into ess_waveform_features
 python training_pipeline.py                         # both models, registered with their views
