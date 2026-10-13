@@ -1,6 +1,9 @@
 # Challenge Objectives — Optimisation (CLEAR / CLARA)
 
-Objectives only — see [`scientific_case.md`](scientific_case.md) for background and motivation.
+Objectives only — see [`scientific_case.md`](scientific_case.md) for background and
+motivation, and [`GRADING.md`](../../GRADING.md) for how scoring and W&B logging work
+across all three challenges. The official score is `report.calc_score()` from `score.py`
+(lower is better); log it to the shared W&B project as `optim/score` each run.
 
 ## 🟢 Easy
 
