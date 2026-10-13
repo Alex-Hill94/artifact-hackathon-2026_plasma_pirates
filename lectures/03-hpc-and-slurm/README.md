@@ -15,7 +15,7 @@ chmod g+s some_folder
 setfacl -d -m g::rwx some_folder
 setfacl -m g::rwx some_folder
 ```
-
+3. The `module load slurm/slurm/24.11` command has been removed from the example `.bashrc` file because it is already present by default. 
 
 ## Abstract
 
@@ -82,9 +82,6 @@ mkdir -p $APPTAINER_CACHEDIR
 # Redirect AI framework caches to Lustre
 export HF_HOME=$PROJECT_DIR/cache_huggingface
 export TRITON_HOME=$PROJECT_DIR/cache_triton
-
-# Load Slurm automatically (Slurm commands are not in PATH by default)
-module load slurm/slurm/24.11
 
 # Handy aliases
 alias sq='squeue -u $USER'
