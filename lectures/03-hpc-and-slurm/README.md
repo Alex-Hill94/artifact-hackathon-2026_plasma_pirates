@@ -3,6 +3,20 @@
 **Speaker:** Stéphane Ilic (IDRIS)  
 **Slot:** Monday, October 12 — early afternoon  
 
+## ⚠️⚠️ BREAKING NEWS ⚠️⚠️ (TUESDAY 2026/10/13)
+
+1. Two env variables (`$APPTAINER_TMPDIR` and `$TMPDIR`) have been removed from the example `.bashrc` file, due to causing errors when building containers with `apptainer build`
+2. Read/write rights in the **Hackathon shared folder** (`/lustre/work/pdl18409/shared`) are a bit more tricky than expected; **every time you create a subdirectory in that specific folder, a procedure has to be followed in order for all the other Hackathon members to be able to write inside this folder**. The typical sequence is as follows:
+```bash
+cd /lustre/work/pdl18409/shared    # navigate to shared folder
+mkdir some_folder                  # create a subdirectory
+# Set the correct rights
+chmod g+s some_folder
+setfacl -d -m g::rwx some_folder
+setfacl -m g::rwx some_folder
+```
+
+
 ## Abstract
 
 Introduction to DALIA at IDRIS (CNRS National Supercomputing Center, Orsay, France) — Europe's first NVIDIA GB200 NVL72 system. This guide covers connecting to the cluster, managing the x86/ARM architecture difference, setting up Apptainer containers, redirecting caches to avoid Lustre/home quotas, launching interactive debugging sessions (`srun`), and submitting multi-GPU batch jobs (`sbatch`).
