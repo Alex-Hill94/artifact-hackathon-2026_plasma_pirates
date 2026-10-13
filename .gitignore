@@ -3,3 +3,9 @@
 __pycache__/
 *.pyc
 .venv/
+
+# lecture 04 generated data
+lectures/04-feature-store/data/llrf/
+lectures/04-feature-store/**/.zenodo/
+lectures/04-feature-store/data/air/
+lectures/04-feature-store/**/.lcsqa/

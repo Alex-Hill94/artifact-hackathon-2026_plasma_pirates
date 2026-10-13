@@ -1,0 +1,12 @@
+# 5.1.1 plus the fixes the workshop needs; the PyPI client ignores the key that hops setup stores
+hopsworks[python] @ git+https://github.com/MagicLex/hopsworks-api@ae7e491df2c9c7e7a42ba33f287cfce884d0541d#subdirectory=python
+pandas>=2.2
+pyarrow>=15
+numpy>=1.26
+scikit-learn==1.8.*   # match the serving image, models are unpickled there
+scikit-optimize>=0.10
+joblib
+# not installed by default: the ESS autoencoder (usecases/ess) needs torch,
+# the Cheetah draft (usecases/clara) needs cheetah-accelerator; their READMEs give the line
+# torch>=2.2
+# cheetah-accelerator>=0.7
