@@ -77,7 +77,7 @@ LATTICE_JSON = HERE / "data" / "clara" / "lattice_data" / "CLARA_cheetah.json"
 REFERENCE_TUNE_JSON = HERE / "data" / "clara" / "lattice_data" / "reference_tune.json"
 MAGNET_RANGES_JSON = HERE / "data" / "clara" / "lattice_data" / "magnet_ranges.json"
 
-LATTICE_START = "cla_s01_sim_aper_01"  # matches the kickoff notebook
+LATTICE_START = "cla_s02_dia_scr_01"
 
 # FEBE hutch screen, s = 67.93 m, just ahead of the IP. 
 READOUT_SCREEN = "cla_feh_dia_scr_01"
@@ -280,10 +280,8 @@ def evaluations_of(segment) -> int:
 # --------------------------------------------------------------------------------- #
 
 
-def sample_beam(rng, num_particles: int = 10_000, severity: float = 1.0):
-    """A starting beam at the lattice entrance, 4.2 MeV out of the gun.
-
-    Randomised around the example beam in section 3 of the kickoff notebook. 
+def sample_beam(rng, num_particles: int = 10_000, severity: float = 1.0, dtype=torch.float32):
+    """A starting beam at the first screen of S02 after space charge effects have become minmimal.
 
     Particles come from torch's global RNG, so it is seeded from `rng` and restored
     afterwards — without that the benchmark is not reproducible. `severity` widens
@@ -291,6 +289,59 @@ def sample_beam(rng, num_particles: int = 10_000, severity: float = 1.0):
     adding), the latter as sqrt(severity) so a large severity stays a harder version of
     this problem rather than a different one.
     """
+    COORDS = ("x", "px", "y", "py", "tau", "p")
+    
+    BASE_MU = {
+        "x": -7.271111e-06,
+        "px": -1.213025e-04,
+        "y": 9.402391e-05,
+        "py": -6.543309e-05,
+        "tau": -8.015132e-06,
+        "p": -8.046335e-04,
+    }
+    BASE_SIGMA = {
+        "x": 1.678922e-04,
+        "px": 1.548525e-03,
+        "y": 1.040813e-03,
+        "py": 8.268690e-04,
+        "tau": 6.877626e-04,
+        "p": 9.312783e-03,
+    }
+    # Every off-diagonal term of the covariance matrix, and the pair of coordinates it
+    # couples. The beam is far from a waist here (alpha_x -7.75, alpha_y 26.1), so these
+    # carry most of the optics and cannot be dropped.
+    BASE_COV = {
+        "cov_xpx": (2.578460e-07, ("x", "px")),
+        "cov_xy": (-1.398290e-11, ("x", "y")),
+        "cov_xpy": (-4.086857e-11, ("x", "py")),
+        "cov_xtau": (-3.559515e-10, ("x", "tau")),
+        "cov_xp": (-8.321519e-09, ("x", "p")),
+        "cov_pxy": (-3.390041e-09, ("px", "y")),
+        "cov_pxpy": (2.007249e-09, ("px", "py")),
+        "cov_pxtau": (9.179778e-10, ("px", "tau")),
+        "cov_pxp": (-2.234429e-08, ("px", "p")),
+        "cov_ypy": (-8.599823e-07, ("y", "py")),
+        "cov_ytau": (-1.662489e-09, ("y", "tau")),
+        "cov_yp": (-6.592547e-10, ("y", "p")),
+        "cov_pytau": (7.511821e-10, ("py", "tau")),
+        "cov_pyp": (-6.321482e-09, ("py", "p")),
+        "cov_taup": (6.354828e-06, ("tau", "p")),
+    }
+    BASE_ENERGY = 3.580550e07   # eV, total
+    BASE_CHARGE = 2.500000e-10  # C
+    
+    # Noise scales, all quoted at severity 1. Centroid jitter is absolute and roughly what
+    # CLARA sees shot to shot; the rms spreads are multiplicative about the baseline.
+    CENTROID_JITTER = {
+        "x": 50e-6,     # m
+        "px": 50e-6,    # rad
+        "y": 50e-6,     # m
+        "py": 50e-6,    # rad
+        "tau": 100e-6,  # m, i.e. 0.33 ps of timing jitter
+        "p": 1e-3,      # relative, i.e. 0.1% energy jitter
+    }
+    SIGMA_SPREAD = 1.3   # each rms lands in [base/1.3, base*1.3]
+    CHARGE_SPREAD = 1.15
 
     def offset(limit):
         return torch.tensor(float(rng.uniform(-limit, limit) * severity))
@@ -302,22 +353,33 @@ def sample_beam(rng, num_particles: int = 10_000, severity: float = 1.0):
 
     torch_state = torch.get_rng_state()
     torch.manual_seed(int(rng.integers(2**31)))
-    try:
+    try:    
+        mu = {c: BASE_MU[c] + float(offset(CENTROID_JITTER[c])) for c in COORDS}
+        sigma = {
+            c: float(size(BASE_SIGMA[c] / SIGMA_SPREAD, BASE_SIGMA[c] * SIGMA_SPREAD))
+            for c in COORDS
+        }
+        charge = float(size(BASE_CHARGE / CHARGE_SPREAD, BASE_CHARGE * CHARGE_SPREAD))
+    
+        # Jitter the covariances through the rms values only, holding the correlation
+        # coefficients fixed. Scaling them independently would leave the covariance matrix
+        # non-positive-definite and from_parameters would fail to sample from it.
+        cov = {
+            name: value / (BASE_SIGMA[a] * BASE_SIGMA[b]) * sigma[a] * sigma[b]
+            for name, (value, (a, b)) in BASE_COV.items()
+        }
+    
+        t = lambda v: torch.tensor(v, dtype=dtype)  
         return cheetah.ParticleBeam.from_parameters(
             num_particles=num_particles,
-            energy=torch.tensor(float(rng.uniform(4.0e6, 4.4e6))),
-            mu_x=offset(5e-5),
-            mu_px=offset(1e-5),
-            mu_y=offset(5e-5),
-            mu_py=offset(1e-5),
-            sigma_x=size(0.7e-5, 1.4e-5),
-            sigma_px=size(0.7e-6, 1.4e-6),
-            sigma_y=size(0.7e-5, 1.4e-5),
-            sigma_py=size(0.7e-6, 1.4e-6),
-            sigma_tau=torch.tensor(1e-6),
-            sigma_p=torch.tensor(1e-4),
-            dtype=torch.float32,
+            **{f"mu_{c}": t(mu[c]) for c in COORDS},
+            **{f"sigma_{c}": t(sigma[c]) for c in COORDS},
+            **{name: t(value) for name, value in cov.items()},
+            energy=t(BASE_ENERGY),
+            total_charge=t(charge),
+            dtype=dtype,
         )
+
     finally:
         torch.set_rng_state(torch_state)
 
