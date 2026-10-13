@@ -25,7 +25,7 @@ import pandas as pd
 import pallas_score
 
 HERE = Path(__file__).resolve().parent
-PROJECT = "m4cast_pallas"
+PROJECT = "m4cast_plasma_pirates"
 DATA_DIR = Path(os.environ.get("PALLAS_DATA_DIR", HERE / "data" / "pallas_hackathon_data"))
 NORMALISATIONS = ("standard", "min_max", "robust", "log10", "none")
 SPLITS = ("random", "ood_density")
@@ -236,25 +236,37 @@ def transform(fv, frame, case):
 # ---- Splits -----------------------------------------------------------------------------------
 
 def split_configs(rows, case, strategy="random", fraction=0.2, seed=0):
-    """(train configs, holdout configs), always whole configurations.
+    """(train configs, holdout configs, {holdout group: configs}), always whole configurations.
 
-    random       a random `fraction` of the configurations
-    ood_density  the Hard objective's cut: train on ood_split.train of pack_reference.json
-                 (P_max < 6,528.6 Pa), hold out the public configurations above it
+    random       a random `fraction` of the configurations; one group, "holdout"
+    ood_density  the Hard objective (trajectory only): train inside ood_split.train of
+                 pack_reference.json (P_max < 6,528.6 Pa) and score two groups -- "in_range",
+                 a random `fraction` of those configurations, and "above_cut", every public
+                 configuration above the cut. Their gap is the objective's deliverable.
     """
     configs = np.sort(rows["config"].unique())
+    rng = np.random.default_rng(seed)
     if strategy == "random":
-        rng = np.random.default_rng(seed)
         holdout = rng.choice(configs, size=int(round(fraction * len(configs))), replace=False)
+        groups = {"holdout": holdout}
     elif strategy == "ood_density":
-        if case.feature_group == "pallas_campaign_a":
-            raise ValueError("the density cut is defined on Campaign B only")
-        train = set(pack_reference()["sections"]["ood_split"]["train"])
-        holdout = [c for c in configs if c not in train]
+        if not case.positional:
+            raise ValueError("the out-of-distribution objective is the trajectory case")
+        inside = set(pack_reference()["sections"]["ood_split"]["train"])
+        below = np.array([c for c in configs if c in inside])
+        groups = {"in_range": rng.choice(below, size=int(round(fraction * len(below))),
+                                         replace=False),
+                  "above_cut": [c for c in configs if c not in inside]}
     else:
         raise ValueError(f"unknown split {strategy!r}; use one of {SPLITS}")
-    holdout = {int(c) for c in holdout}
-    return [int(c) for c in configs if c not in holdout], sorted(holdout)
+    groups = {name: sorted(int(c) for c in members) for name, members in groups.items()}
+    holdout = {c for members in groups.values() for c in members}
+    return [int(c) for c in configs if c not in holdout], sorted(holdout), groups
+
+
+def submission_file(case, split):
+    """The CSV name the organisers expect: the Hard OOD objective has its own."""
+    return "submission_ood.csv" if split == "ood_density" else case.submission_file
 
 
 # ---- 3. Models --------------------------------------------------------------------------------
