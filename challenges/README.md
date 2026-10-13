@@ -19,3 +19,6 @@ Three challenges, each tackled by two teams. Every challenge folder follows the 
 | [Surrogate Models](surrogate-models/) | PALLAS (laser-plasma acceleration) | Mykyta |
 
 See `scientific_case.md` for background, `objectives.md` for the difficulty levels, and `data/README.md` for dataset details (to be completed by the respective case holders).
+
+See **[GRADING.md](../GRADING.md)** for how objectives are scored and logged to the shared
+Weights & Biases leaderboard — same project/key setup for all three challenges.

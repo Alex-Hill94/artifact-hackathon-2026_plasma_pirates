@@ -5,12 +5,12 @@
 
 ## Abstract
 
-_TBD_
+A tour of various methods in AI and Sciences.
 
 ## Slides
 
-_To be added_
+intro_lecture.pdf
 
 ## Additional resources
 
-_To be added_
+See demos folder Readme.
