@@ -31,3 +31,6 @@ wandb==0.30.0
 # version checked against aissai26.hops.live; the [python] extra reads the offline store
 # without Spark or Hive.
 hopsworks[python]==5.1.1
+
+# DeepONet models (models/MO_DeepOnet.py), on the PyTorch backend above
+deepxde==1.15.0
