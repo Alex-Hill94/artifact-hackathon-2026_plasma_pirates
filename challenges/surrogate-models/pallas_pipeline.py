@@ -212,9 +212,17 @@ def prepare_statistics(fv, description=""):
     return version
 
 
-def read_rows(fv, case):
-    """Every row of the view, untransformed, with the pack's column names."""
-    raw = fv.query.read()
+def rows_file(fv_name, fv_version):
+    """Where a view's rows are exported for machines that cannot read them from Hopsworks:
+    DALIA's compute nodes reach the REST API, but their proxy refuses the Feature Query Service's
+    Arrow Flight port (HTTP 403)."""
+    return HERE / "data" / "fv_rows" / f"{fv_name}_v{fv_version}.parquet"
+
+
+def read_rows(fv, case, exported=None):
+    """Every row of the view, untransformed, with the pack's column names; from `exported` (a
+    parquet of fv.query.read(), see rows_file) instead of the feature store when given."""
+    raw = pd.read_parquet(exported) if exported else fv.query.read()
     names = {fs_name(c): c for c in ["config"] + case.inputs + case.targets}
     return raw.rename(columns=names)[list(names.values())].reset_index(drop=True)
 
@@ -409,7 +417,7 @@ def register_model(project, bundle_dir, name, fv, td_version, metrics, descripti
     model = registry.python.create_model(
         name=name, metrics={k: float(v) for k, v in metrics.items()}, description=description,
         feature_view=fv, training_dataset_version=td_version)
-    model.save(str(bundle_dir))
+    model.save(str(bundle_dir), keep_original_files=True)   # the default moves them away
     return model
 
 

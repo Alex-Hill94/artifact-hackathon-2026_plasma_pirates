@@ -34,3 +34,6 @@ hopsworks[python]==5.1.1
 
 # DeepONet models (models/MO_DeepOnet.py), on the PyTorch backend above
 deepxde==1.15.0
+
+# Hyperparameter search (hpo.py)
+optuna==5.0.0
