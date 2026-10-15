@@ -1,0 +1,157 @@
+/* Visual language adapted from index_inspiration.md. */
+
+/*-- scss:defaults --*/
+
+$navy: #0d1b2a;
+$navy-light: #13283b;
+$cyan: #22d3ee;
+$cyan-soft: #a5f3fc;
+$fuchsia: #e879f9;
+$fuchsia-soft: #f5d0fe;
+$amber: #fbbf24;
+$ink: #e6edf3;
+$muted: #9fb0c0;
+$line: rgba(165, 243, 252, 0.22);
+
+/*-- scss:rules --*/
+
+.reveal {
+  color: $ink;
+  background: $navy;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 30px;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section {
+  padding: 0.45em 0.8em;
+  box-sizing: border-box;
+}
+
+.reveal h1, .reveal h2, .reveal h3 {
+  color: white;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  text-transform: none;
+}
+
+.reveal h1 { font-size: 2.25em; line-height: 1.03; }
+.reveal h2 { font-size: 1.55em; margin-bottom: 0.55em; }
+.reveal h3 { font-size: 0.82em; color: $cyan-soft; }
+.reveal p, .reveal li { color: $ink; line-height: 1.32; }
+.reveal strong { color: $cyan-soft; }
+.reveal code { color: $cyan-soft; }
+
+.reveal #title-slide {
+  background: radial-gradient(circle at 82% 18%, rgba(232, 121, 249, 0.2), transparent 28%),
+              radial-gradient(circle at 16% 78%, rgba(34, 211, 238, 0.12), transparent 25%),
+              $navy;
+  text-align: left;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  padding: 1.1em 1.4em;
+}
+
+.reveal #title-slide h1 {
+  width: 52%;
+  max-width: 650px;
+  color: white;
+  border-left: 0.12em solid $fuchsia;
+  padding-left: 0.35em;
+  box-sizing: border-box;
+}
+
+.reveal #title-slide .subtitle,
+.reveal #title-slide .author,
+.reveal #title-slide .date,
+.reveal #title-slide .quarto-title-authors {
+  color: $muted;
+  width: 50%;
+  max-width: 625px;
+  margin-left: 0.45em;
+}
+
+.reveal .title-slide .author { color: $fuchsia-soft; font-size: 0.63em; line-height: 1.55; }
+.reveal .title-slide .date { font-size: 0.5em; }
+
+.title-artwork-frame {
+  position: absolute;
+  right: 3%;
+  bottom: 18%;
+  width: 40%;
+  height: 64%;
+  overflow: visible;
+  border: 1px solid rgba(232, 121, 249, 0.45);
+  border-radius: 0.45em;
+  box-shadow: 0 0 2.5em rgba(232, 121, 249, 0.18);
+}
+
+.title-artwork {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  transform: none;
+}
+
+.columns { display: flex; gap: 1.4em; align-items: stretch; }
+.column { flex: 1; }
+
+.placeholder, .accent-card, .metric-card, .model-card {
+  border: 1px solid $line;
+  border-radius: 0.35em;
+  background: rgba(19, 40, 59, 0.72);
+  padding: 0.8em 0.95em;
+}
+
+.placeholder {
+  color: $muted;
+  min-height: 3.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.68em;
+  border-style: dashed;
+}
+
+.placeholder.tall { min-height: 8em; margin-top: 0.7em; }
+.hero-placeholder { min-height: 10em; font-size: 0.85em; }
+.benchmark-placeholder { min-height: 10em; font-size: 0.85em; }
+.result-placeholder { min-height: 5em; margin-top: 0.8em; }
+.list-placeholder { min-height: 6em; justify-content: flex-start; text-align: left; }
+.plotly-demo { width: 100%; min-height: 13em; border: 1px solid $line; border-radius: 0.35em; overflow: hidden; }
+
+.accent-card { border-top: 0.2em solid $fuchsia; }
+.accent-card strong { color: $amber; font-size: 1.25em; }
+.caption, .notes { color: $muted; font-size: 0.48em; margin-top: 0.65em; }
+.notes { color: $amber; }
+
+.pipeline { display: flex; align-items: center; gap: 0.35em; margin-top: 1.3em; }
+.pipeline-step { flex: 1; min-height: 6em; padding: 0.75em; border: 1px solid $line; border-radius: 0.3em; background: $navy-light; font-size: 0.57em; }
+.pipeline-step strong { display: block; color: $amber; font-size: 1.25em; }
+.pipeline-step.highlight { border-color: $fuchsia; box-shadow: 0 0 1.5em rgba(232, 121, 249, 0.16); }
+.pipeline-arrow { color: $cyan; font-size: 1.3em; }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65em; }
+.model-card { min-height: 4.6em; font-size: 0.68em; }
+.card-title { color: $fuchsia-soft; font-size: 1.2em; font-weight: 750; margin-bottom: 0.35em; }
+.model-card p { font-size: 0.9em; }
+
+.check-list ul { padding-left: 1.2em; }
+.check-list li { margin: 0.45em 0; font-size: 0.68em; }
+.metric-card { text-align: center; min-height: 3.6em; font-size: 0.65em; }
+.metric-card strong { display: block; color: $amber; }
+.closing-slide { text-align: center; margin-top: 2em; }
+.closing-title { font-size: 1.8em; color: $fuchsia-soft; font-weight: 750; }
+.closing-slide p { color: $cyan-soft; }
+.small { color: $muted; font-size: 0.52em; }
+
+.reveal .slide-number { color: $muted; background: transparent; }
+.reveal .progress { color: $cyan; height: 3px; }
+.reveal .controls { color: $cyan; }
