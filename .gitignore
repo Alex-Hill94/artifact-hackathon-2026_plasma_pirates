@@ -21,3 +21,6 @@ challenges/surrogate-models/submissions/
 
 # credentials (HOPSWORKS_*, WANDB_API_KEY): never committed
 .env
+
+# local W&B run files (e.g. from log_official_score.py); the runs themselves live on wandb.ai
+wandb/
