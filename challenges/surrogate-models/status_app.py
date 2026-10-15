@@ -23,9 +23,17 @@ st.markdown("<style>.block-container{padding:0.5rem 1rem 0 1rem;max-width:100%}"
             "header[data-testid='stHeader']{display:none}</style>", unsafe_allow_html=True)
 
 
+@st.cache_data(ttl=REFRESH, show_spinner=False)
+def cached_page():
+    """One read of the registry and W&B per REFRESH seconds, shared by every viewer."""
+    page, _, _ = status.render(live=REFRESH)
+    return page
+
+
 @st.fragment(run_every=REFRESH)
 def live_page():
-    page, errors, _ = status.render(live=REFRESH)
+    with st.spinner("Reading the Hopsworks registry and W&B (about 20 s the first time) ..."):
+        page = cached_page()
     components.html(page, height=2800, scrolling=True)
 
 
