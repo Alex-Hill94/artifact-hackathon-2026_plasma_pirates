@@ -289,6 +289,8 @@ class SurrogateModel:
 
     target_scaling "scorer": log10 for the quantities the scorer logs (charge, spread, ...),
     unchanged otherwise -- the scale R2 is computed on. "none": physical units.
+    An estimator with `accepts_dataframe = True` gets the inputs as a DataFrame, with the
+    feature view's column names (e.g. to find the coordinate z_mm); others get a numpy array.
     """
 
     def __init__(self, estimator, targets, target_scaling="scorer"):
@@ -298,13 +300,18 @@ class SurrogateModel:
         self.targets = list(targets)
         self.target_scaling = target_scaling
 
+    def _inputs(self, X):
+        if getattr(self.estimator, "accepts_dataframe", False):
+            return pd.DataFrame(X).astype(float)
+        return np.asarray(X, float)
+
     def fit(self, X, y):
         scaled = np.column_stack([self._to_model(t, y[t]) for t in self.targets])
-        self.estimator.fit(np.asarray(X, float), scaled)
+        self.estimator.fit(self._inputs(X), scaled)
         return self
 
     def predict(self, X):
-        out = np.asarray(self.estimator.predict(np.asarray(X, float)), float)
+        out = np.asarray(self.estimator.predict(self._inputs(X)), float)
         out = out.reshape(len(X), len(self.targets))
         return pd.DataFrame({t: self._to_physical(t, out[:, i])
                              for i, t in enumerate(self.targets)})
@@ -367,7 +374,7 @@ def r2_by_position(case, predicted, key):
 # ---- 5. Model registry ------------------------------------------------------------------------
 
 REQUIREMENTS = ("numpy", "pandas", "scikit-learn", "scipy", "joblib", "pyarrow", "hopsworks",
-                "torch")
+                "torch", "deepxde")
 
 
 def requirements():
