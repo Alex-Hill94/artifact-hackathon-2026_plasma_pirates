@@ -24,7 +24,7 @@ execute:
   message: false
 ---
 
-## Why surrogate models?
+## Why do we need surrogate models?
 
 ::: {.columns}
 ::: {.column width="52%"}
@@ -46,9 +46,15 @@ Add one sentence describing the simulation bottleneck.
 Replace repeated high-fidelity simulation runs with a fast, validated approximation.
 :::
 
-::: {.placeholder .tall}
-Insert a simple visual or headline statistic.
-:::
+<iframe
+  class="video-frame"
+  src="https://www.youtube-nocookie.com/embed/xH0mQ93MpMc?autoplay=0&mute=1&enablejsapi=1&playsinline=1&rel=0"
+  data-autoplay-src="https://www.youtube-nocookie.com/embed/xH0mQ93MpMc?autoplay=1&mute=1&enablejsapi=1&playsinline=1&rel=0"
+  title="PALLAS simulation video"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen>
+</iframe>
 
 :::
 :::
@@ -104,6 +110,19 @@ Fast predictions for R&D
 ::: {.notes}
 Replace the labels above with the final data flow once the presentation narrative is settled.
 :::
+
+## Data exploration
+
+<iframe
+  class="video-frame video-feature"
+  src="https://www.youtube-nocookie.com/embed/Bx12V2A3MlQ?autoplay=0&mute=1&enablejsapi=1&playsinline=1&rel=0"
+  data-autoplay-src="https://www.youtube-nocookie.com/embed/Bx12V2A3MlQ?autoplay=1&mute=1&enablejsapi=1&playsinline=1&rel=0"
+  data-video-url="https://youtu.be/Bx12V2A3MlQ"
+  title="PALLAS data exploration demo"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen>
+</iframe>
 
 ## 1 · Read the simulation data from Hopsworks
 
@@ -233,16 +252,21 @@ Insert a correlation matrix, outlier comparison, or representative distribution.
 ::: {.columns}
 ::: {.column width="58%"}
 
-![](index_files/images/feature-histograms-by-population-pos-outliers.png){fig-alt="Feature histograms comparing non-outlier and candidate-outlier trajectory rows" width="92%"}
+<iframe
+  class="plotly-frame outlier-histogram-frame"
+  src="data/trajectory_histograms.html"
+  title="Interactive trajectory feature histograms"
+  loading="lazy">
+</iframe>
 
 ::: {.caption}
-Trajectory feature distributions split into non-outlier rows and candidate outlier rows.
+Static Hopsworks snapshot: use the dropdown to inspect one trajectory feature at a time.
 :::
 
 :::
 ::: {.column width="38%"}
 
-### What the explorer does
+### How the method works
 
 For every numeric trajectory input and target, the explorer applies two complementary univariate tests:
 
