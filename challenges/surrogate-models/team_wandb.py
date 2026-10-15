@@ -20,8 +20,6 @@ so it is fixed here. Use `tags` or config fields to tell your own experiments ap
 import os
 from pathlib import Path
 
-import wandb
-
 ENTITY = "artifact-hackathon-2026"
 PROJECT = "surrogate-models"
 GROUP = "plasma-pirates"
@@ -48,6 +46,7 @@ def start_run(task, tier, name=None, tags=None, **config):
     load_env()
     if not os.environ.get("WANDB_API_KEY"):
         raise RuntimeError("WANDB_API_KEY is not set and no .env with it was found")
+    import wandb                       # here, so the constants import without wandb installed
     wandb.login(key=os.environ["WANDB_API_KEY"])
     return wandb.init(entity=ENTITY, project=PROJECT, group=GROUP, name=name,
                       tags=tags, config={"task": task, "tier": tier, **config})

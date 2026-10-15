@@ -85,6 +85,12 @@ python status.py --no-open      # writes the page without opening it
 `outputs/` is git-ignored, so the page stays local. Registry scores are each author's own
 holdout, a guide for choosing what to submit; only the W&B score counts for the ranking.
 
+The same page also runs live in Hopsworks, as the app `plasma_pirates_status` of the project
+`m4cast_plasma_pirates` (Hopsworks UI → Apps; only project members can open it). `status_app.py`
+is its Streamlit entry point: Hopsworks clones this repository's `master` and redeploys the app
+on every push, reads the registry with the app's own session and the W&B key from the Hopsworks
+secret `WANDB_API_KEY`, and the page refreshes itself every 2 minutes.
+
 ## Getting help
 
 Reach out to the case holder or challenge coordinator listed above, or ask during the Tuesday

@@ -5,6 +5,7 @@ Run from this folder with the environment's own Python:
     ../../../.venv/bin/python status.py              # writes outputs/status.html and opens it
     ../../../.venv/bin/python status.py --watch 300  # rebuilds every 5 minutes; the page reloads
 
+status_app.py serves the same page as a Streamlit app in Hopsworks (Apps), refreshed live.
 Both sources are read only. The registry scores are each author's own holdout (not comparable
 across authors); `pallas/mean_r2` on W&B is the organisers' score on the hidden test, the one
 the leaderboard ranks on. Official runs name the registry model they scored in their config
@@ -13,6 +14,7 @@ the leaderboard ranks on. Official runs name the registry model they scored in t
 
 import argparse
 import html
+import json
 import os
 import time
 import webbrowser
@@ -61,8 +63,18 @@ def targets_of(task):
     return pp.CASES[CASE_OF_TASK[task]].targets if task in CASE_OF_TASK else []
 
 
-def registry_models():
-    """Every registered model of the team project, with its holdout scores."""
+def registry_entries():
+    """The raw model-registry listing of the team project.
+
+    With HOPSWORKS_API_KEY (a laptop): the REST API. Without it (inside Hopsworks, e.g. the app):
+    the session's own client, which needs no key.
+    """
+    if not os.environ.get("HOPSWORKS_API_KEY"):
+        import hopsworks
+        from hopsworks_common import client
+        project = hopsworks.login()
+        path = ["project", project.id, "modelregistries", project.id, "models"]
+        return client._get_instance()._send_request("GET", path).get("items", [])
     host = os.environ["HOPSWORKS_HOST"]
     headers = {"Authorization": f"ApiKey {os.environ['HOPSWORKS_API_KEY']}"}
     api = f"https://{host}/hopsworks-api/api/project"
@@ -73,8 +85,13 @@ def registry_models():
     answer = requests.get(f"{api}/{project_id}/modelregistries/{project_id}/models",
                           headers=headers, timeout=60)
     answer.raise_for_status()
+    return answer.json().get("items", [])
+
+
+def registry_models():
+    """Every registered model of the team project, with its holdout scores."""
     models = []
-    for entry in answer.json().get("items", []):
+    for entry in registry_entries():
         task = task_of_model(entry["name"])
         metrics = entry.get("metrics") or {}
         per_target = {t: metrics.get(f"holdout_r2_{pp.fs_name(t)}", metrics.get(f"r2_{pp.fs_name(t)}"))
@@ -93,10 +110,58 @@ def registry_models():
     return models
 
 
+def wandb_key():
+    """WANDB_API_KEY from the environment / .env, else the Hopsworks secret of that name."""
+    if not os.environ.get("WANDB_API_KEY"):
+        import hopsworks
+        hopsworks.login()
+        os.environ["WANDB_API_KEY"] = hopsworks.get_secrets_api().get_secret("WANDB_API_KEY").value
+    return os.environ["WANDB_API_KEY"]
+
+
+RUNS_QUERY = """query Runs($entity: String!, $project: String!, $cursor: String) {
+  project(name: $project, entityName: $entity) {
+    runs(first: 200, after: $cursor) {
+      edges { node { name displayName group state createdAt config summaryMetrics } }
+      pageInfo { hasNextPage endCursor } } } }"""
+
+
+def wandb_runs_graphql():
+    """The same as wandb_runs, through W&B's public GraphQL API (no wandb package needed)."""
+    runs, cursor = [], None
+    while True:
+        answer = requests.post("https://api.wandb.ai/graphql", auth=("api", wandb_key()),
+                               json={"query": RUNS_QUERY, "variables": {
+                                   "entity": ENTITY, "project": WANDB_PROJECT, "cursor": cursor}},
+                               timeout=60)
+        answer.raise_for_status()
+        listing = answer.json()["data"]["project"]["runs"]
+        for edge in listing["edges"]:
+            node = edge["node"]
+            config = {k: v.get("value") if isinstance(v, dict) else v
+                      for k, v in json.loads(node.get("config") or "{}").items()}
+            summary = {k: v for k, v in json.loads(node.get("summaryMetrics") or "{}").items()
+                       if not k.startswith("_") and isinstance(v, (int, float))}
+            runs.append({
+                "name": node["displayName"],
+                "url": f"https://wandb.ai/{ENTITY}/{WANDB_PROJECT}/runs/{node['name']}",
+                "group": node.get("group") or "(no group)", "state": node["state"],
+                "task": config.get("task"), "tier": config.get("tier"),
+                "created": node["createdAt"], "scored_at": config.get("scored_at", ""),
+                "model": config.get("model_name"), "model_version": config.get("model_version"),
+                "official": "pallas/mean_r2" in summary, "summary": summary})
+        if not listing["pageInfo"]["hasNextPage"]:
+            return runs
+        cursor = listing["pageInfo"]["endCursor"]
+
+
 def wandb_runs():
     """Every run of the challenge project the team key can see, with its summary."""
-    import wandb
-    api = wandb.Api(api_key=os.environ["WANDB_API_KEY"], timeout=60)
+    try:
+        import wandb
+    except ImportError:            # e.g. Hopsworks' app environment
+        return wandb_runs_graphql()
+    api = wandb.Api(api_key=wandb_key(), timeout=60)
     runs = []
     for run in api.runs(f"{ENTITY}/{WANDB_PROJECT}"):
         summary = {k: v for k, v in run.summary._json_dict.items()
@@ -350,7 +415,7 @@ overflow-x:auto}
 """
 
 
-def page(cases, runs, models, errors, refresh):
+def page(cases, runs, models, errors, refresh, live=None):
     now = datetime.now()
     reached = standing(cases)
     official = sum(1 for c in cases if c["official"])
@@ -363,6 +428,8 @@ def page(cases, runs, models, errors, refresh):
         f'<div><span class="label">W&amp;B runs visible</span><b>{len(runs)}</b></div>')
     meta_refresh = f'<meta http-equiv="refresh" content="{refresh}">' if refresh else ""
     every = f" · rebuilt every {refresh}s" if refresh else ""
+    if live:
+        every = f" · live, refreshed every {live}s"
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {meta_refresh}<title>Plasma Pirates Status</title><style>{CSS}</style></head>
@@ -384,7 +451,8 @@ a guide for choosing what to submit, not a ranking.</p>
 </main></body></html>"""
 
 
-def build(out, refresh):
+def collect():
+    """(cases, runs, models, errors): everything the page shows, read once."""
     load_env()
     errors = []
     try:
@@ -398,8 +466,19 @@ def build(out, refresh):
         runs = []
         errors.append(f"W&B: {type(error).__name__}: {str(error)[:200]}")
     cases = [case_status(o, models, runs) for o in OBJECTIVES]
+    return cases, runs, models, errors
+
+
+def render(refresh=None, live=None):
+    """(the page as an HTML string, errors); `live` labels it as refreshed every `live` s."""
+    cases, runs, models, errors = collect()
+    return page(cases, runs, models, errors, refresh, live), errors, cases
+
+
+def build(out, refresh):
+    html_page, errors, cases = render(refresh)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(page(cases, runs, models, errors, refresh))
+    out.write_text(html_page)
     for c in cases:
         print(f"  {c['task']:<11} official {f4(c['score'])}  bar {f4(c['bar'])}  "
               f"best holdout {f4(c['best_model']['mean']) if c['best_model'] else '—'}")
