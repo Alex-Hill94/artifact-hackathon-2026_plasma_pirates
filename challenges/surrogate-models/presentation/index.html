@@ -6,7 +6,10 @@
 <script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
 <link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="index_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-bf27225e3a48a9273f3daa8f8e829971.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="index_files/libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="index_files/libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet"><meta charset="utf-8">
   <meta name="generator" content="quarto-1.10.19">
 
   <meta name="author" content="Hayg Guler · Alexander Hill · Sébastien Joly · Keon Hee Kim · Mykyta Lenivenko · Guillermo Rodrîguez Llorente">
@@ -101,7 +104,7 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-21f1d7420090fdf51a76b50bea86f7b5.css">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-3270dba208deb353af74dee29be33531.css">
   <link href="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="index_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -289,53 +292,274 @@ Surrogate model</p>
 <iframe class="video-frame video-feature" src="https://www.youtube-nocookie.com/embed/Bx12V2A3MlQ?autoplay=0&amp;mute=1&amp;enablejsapi=1&amp;playsinline=1&amp;rel=0" data-autoplay-src="https://www.youtube-nocookie.com/embed/Bx12V2A3MlQ?autoplay=1&amp;mute=1&amp;enablejsapi=1&amp;playsinline=1&amp;rel=0" data-video-url="https://youtu.be/Bx12V2A3MlQ" title="PALLAS data exploration demo" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="">
 </iframe>
 </section>
-<section id="read-the-simulation-data-from-hopsworks" class="slide level2">
-<h2>1 · Read the simulation data from Hopsworks</h2>
-<div class="columns">
-<div class="column" style="width:53%;">
-<p><img data-src="index_files/images/Screenshot%202026-10-14%20at%2010.11.57.png" style="width:96.0%" alt="PALLAS Data Explorer showing the trajectory feature group and candidate outliers"></p>
-<div class="caption">
-<p>The same feature groups can be inspected interactively before they become model inputs.</p>
+<section id="pipe-overview" class="slide level2">
+<h2>One pipeline, six steps</h2>
+<p>Every model in the team runs through the same path, whoever wrote it and wherever it trains: the notebook <code>surrogate_pipeline.ipynb</code>, the headless <code>train.py</code>, or a job on DALIA’s GPUs.</p>
+<div class="pipe-steps">
+<p><a class="pipe-step" href="#/pipe-feature-store"><span class="pipe-num">1</span><b>Feature store</b><span>Read the PALLAS campaigns from Hopsworks</span><em><span data-kpi="fg_rows"></span> rows</em></a> <a class="pipe-step" href="#/pipe-transformations"><span class="pipe-num">2</span><b>Traced transformations</b><span>Normalisations and statistics stored in the feature view</span><em><span data-kpi="n_inputs"></span> inputs · TD v<span data-kpi="td_version"></span></em></a> <a class="pipe-step" href="#/pipe-training"><span class="pipe-num">3</span><b>Training</b><span>Any <code>models/*.py</code>, on a laptop or on DALIA</span><em><span data-kpi="hpo_trials"></span> HPO trials</em></a> <a class="pipe-step" href="#/pipe-registry"><span class="pipe-num">4</span><b>Model registry</b><span>Model, code, pins and metadata, linked to its view</span><em><span data-kpi="models"></span> versions</em></a> <a class="pipe-step" href="#/pipe-benchmark"><span class="pipe-num">5</span><b>Benchmark &amp; status</b><span>Every registered model against the bar, live</span><em><span data-kpi="tasks"></span> cases</em></a> <a class="pipe-step highlight" href="#/pipe-handin"><span class="pipe-num">6</span><b>Hand-in</b><span>Best model per case → CSV → organisers → W&amp;B</span><em><span data-kpi="official"></span> official scores</em></a></p>
 </div>
-</div><div class="column" style="width:43%;">
-<h3 id="the-pipeline-starts-with-a-feature-store-connection">The pipeline starts with a feature store connection</h3>
+<div class="pipe-legend">
+<p><span class="tool tool-hops">Hopsworks</span> steps 1, 2, 4 and 5 &nbsp;·&nbsp; <span class="tool tool-dalia">DALIA GB200</span> step 3 &nbsp;·&nbsp; <span class="tool tool-wandb">W&amp;B</span> step 6</p>
+</div>
+<div class="caption">
+<p>Click a step to jump to it. The figures in this section come from Hopsworks and W&amp;B, snapshot taken <span data-kpi="built"></span>.</p>
+</div>
+</section>
+<section id="pipe-feature-store" class="slide level2">
+<h2>1 · Pull the data from the feature store</h2>
+<div class="columns">
+<div class="column" style="width:57%;">
+<div class="viz-html" data-viz="fg-explorer">
+
+</div>
+<div class="caption">
+<p>The four feature groups of the public pack in the team project. Click one to see its columns; hover a column for its type.</p>
+</div>
+</div><div class="column" style="width:40%;">
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="" aria-label="1"></a>project <span class="op">=</span> pp.<span class="ex">connect</span>(pp.PROJECT)</span>
 <span id="cb1-2"><a href="" aria-label="2"></a>fs <span class="op">=</span> project.get_feature_store()</span>
 <span id="cb1-3"><a href="" aria-label="3"></a></span>
-<span id="cb1-4"><a href="" aria-label="4"></a>case <span class="op">=</span> pp.CASES[CASE]</span>
+<span id="cb1-4"><a href="" aria-label="4"></a>case <span class="op">=</span> pp.CASES[CASE]   <span class="co"># inputs, targets, rows</span></span>
 <span id="cb1-5"><a href="" aria-label="5"></a>fv <span class="op">=</span> pp.get_feature_view(</span>
-<span id="cb1-6"><a href="" aria-label="6"></a>    fs, <span class="ss">f"</span><span class="sc">{</span>OWNER<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>CASE<span class="sc">}</span><span class="ss">_fv"</span>, FV_VERSION</span>
-<span id="cb1-7"><a href="" aria-label="7"></a>)</span>
-<span id="cb1-8"><a href="" aria-label="8"></a>rows <span class="op">=</span> pp.read_rows(fv, case)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The selected <strong>case</strong> determines the feature group, input columns, target columns, and row filter. The feature view then applies the shared input normalisations stored in Hopsworks.</p>
-<p>This keeps the experiment tied to a reproducible data definition rather than a manually exported table.</p>
+<span id="cb1-6"><a href="" aria-label="6"></a>    fs, <span class="ss">f"</span><span class="sc">{</span>OWNER<span class="sc">}</span><span class="ss">_</span><span class="sc">{</span>CASE<span class="sc">}</span><span class="ss">_fv"</span>, FV_VERSION)</span>
+<span id="cb1-7"><a href="" aria-label="7"></a>rows <span class="op">=</span> pp.read_rows(fv, case)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="compact">
+<ul>
+<li>The <strong>case</strong> fixes the feature group, inputs, targets and row filter (e.g.&nbsp;injected bunches only).</li>
+<li>Nobody exports a CSV by hand: every experiment starts from the same versioned data.</li>
+<li>One row per simulation, per position for the trajectories.</li>
+</ul>
+</div>
+<p><a href="index_files/images/Screenshot%202026-10-14%20at%2010.11.57.png" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img data-src="index_files/images/Screenshot%202026-10-14%20at%2010.11.57.png" class="thumb" alt="PALLAS Data Explorer showing the trajectory feature group and candidate outliers"></a></p>
+<p><a class="ext-link" data-link="hopsworks" target="_blank" rel="noopener" href="">Open the project in Hopsworks ↗</a></p>
 </div></div>
 </section>
-<section id="transform-train-score-and-register" class="slide level2">
-<h2>2 · Transform, train, score, and register</h2>
+<section id="pipe-transformations" class="slide level2">
+<h2>2 · Transformations that travel with the data</h2>
 <div class="columns">
-<div class="column" style="width:48%;">
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="" aria-label="1"></a>TD_VERSION <span class="op">=</span> pp.prepare_statistics(fv)</span>
-<span id="cb2-2"><a href="" aria-label="2"></a>train_configs, holdout_configs, holdout_groups <span class="op">=</span> pp.split_configs(</span>
-<span id="cb2-3"><a href="" aria-label="3"></a>    rows, case, SPLIT, HOLDOUT_FRACTION, SEED</span>
-<span id="cb2-4"><a href="" aria-label="4"></a>)</span>
-<span id="cb2-5"><a href="" aria-label="5"></a></span>
-<span id="cb2-6"><a href="" aria-label="6"></a>train_rows <span class="op">=</span> rows[rows.config.isin(train_configs)]</span>
-<span id="cb2-7"><a href="" aria-label="7"></a>X_train <span class="op">=</span> pp.transform(fv, train_rows, case)</span>
-<span id="cb2-8"><a href="" aria-label="8"></a>model <span class="op">=</span> pp.SurrogateModel(</span>
-<span id="cb2-9"><a href="" aria-label="9"></a>    model_module.build_model(<span class="op">**</span>params),</span>
-<span id="cb2-10"><a href="" aria-label="10"></a>    case.targets, TARGET_SCALING</span>
-<span id="cb2-11"><a href="" aria-label="11"></a>)</span>
-<span id="cb2-12"><a href="" aria-label="12"></a>model.fit(X_train, train_rows)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>The split is made on complete <strong>configurations</strong>, so rows from a single simulation do not leak into both training and holdout data. The official scorer evaluates predictions on configurations the model has not seen.</p>
-</div><div class="column" style="width:48%;">
-<p><img data-src="index_files/images/Screenshot%202026-10-15%20at%2010.02.13.png" style="width:98.0%" alt="Hopsworks provenance graph linking a feature group, feature view, training dataset, and registered model"></p>
-<div class="caption">
-<p>Hopsworks records the lineage from source feature group through feature view and training dataset to the registered model.</p>
+<div class="column" style="width:60%;">
+<div class="viz-card">
+<div class="viz-switch" data-for="split-hist">
+<button class="active" data-view="raw">
+Physical units
+</button>
+<button data-view="scaled">
+As the model sees it
+</button>
 </div>
-<div class="accent-card">
-<p><strong>Registry hand-off</strong></p>
-<p>The upload bundles the fitted model, metadata, code, metrics, feature-view version, and split. A later inference run can recover the same inputs and provenance.</p>
+<div id="split-hist" class="viz viz-md" data-viz="split-hist" data-view="raw">
+
+</div>
+</div>
+<div class="caption">
+<p>Trajectory configurations by gas pressure, split as the Hard objective asks: train below the cut, score in-range and above-cut separately. Toggle the legend to isolate a group.</p>
+</div>
+</div><div class="column" style="width:37%;">
+<h3 id="stored-in-the-feature-view-not-in-a-notebook">Stored in the feature view, not in a notebook</h3>
+<div class="chips" data-viz="normalisation-chips">
+
+</div>
+<div class="compact">
+<ul>
+<li>Statistics come from <strong>training dataset v<span data-kpi="td_version"></span></strong>, over the inputs only, so the holdout’s targets cannot leak into them.</li>
+<li>A view version is <strong>immutable</strong>: other normalisations mean a new <code>FV_VERSION</code>.</li>
+<li>Splits take <strong>whole configurations</strong>: <span data-kpi="split_train"></span> train, <span data-kpi="split_in_range"></span> in-range and <span data-kpi="split_above_cut"></span> above-cut holdout. No simulation sits on both sides.</li>
+<li>Targets are scaled inside the model, so predictions return in physical units.</li>
+</ul>
+</div>
+</div></div>
+</section>
+<section id="pipe-training" class="slide level2">
+<h2>3 · Train any model, anywhere</h2>
+<div class="columns">
+<div class="column" style="width:44%;">
+<div class="panel-tabset">
+<ul id="tabset-1" class="panel-tabset-tabby"><li><a data-tabby-default="" href="#tabset-1-1">Model file</a></li><li><a href="#tabset-1-2">Headless</a></li><li><a href="#tabset-1-3">DALIA</a></li></ul>
+<div class="tab-content">
+<div id="tabset-1-1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="" aria-label="1"></a><span class="co"># models/my_model.py: the whole contract</span></span>
+<span id="cb2-2"><a href="" aria-label="2"></a>PARAMS <span class="op">=</span> {<span class="st">"hidden"</span>: (<span class="dv">128</span>, <span class="dv">128</span>, <span class="dv">128</span>)}</span>
+<span id="cb2-3"><a href="" aria-label="3"></a></span>
+<span id="cb2-4"><a href="" aria-label="4"></a><span class="kw">def</span> build_model(<span class="op">**</span>params):</span>
+<span id="cb2-5"><a href="" aria-label="5"></a>    <span class="cf">return</span> Regressor(<span class="op">**</span>params)  <span class="co"># fit / predict</span></span>
+<span id="cb2-6"><a href="" aria-label="6"></a></span>
+<span id="cb2-7"><a href="" aria-label="7"></a>model <span class="op">=</span> pp.SurrogateModel(</span>
+<span id="cb2-8"><a href="" aria-label="8"></a>    module.build_model(<span class="op">**</span>params),</span>
+<span id="cb2-9"><a href="" aria-label="9"></a>    case.targets, TARGET_SCALING)</span>
+<span id="cb2-10"><a href="" aria-label="10"></a>model.fit(X_train, train_rows)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="tabset-1-2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="" aria-label="1"></a><span class="ex">python</span> train.py <span class="at">--case</span> trajectory <span class="dt">\</span></span>
+<span id="cb3-2"><a href="" aria-label="2"></a>  <span class="at">--split</span> ood_density <span class="dt">\</span></span>
+<span id="cb3-3"><a href="" aria-label="3"></a>  <span class="at">--model-file</span> models/MO_DeepOnet.py <span class="dt">\</span></span>
+<span id="cb3-4"><a href="" aria-label="4"></a>  <span class="at">--params</span> <span class="st">'{"ensemble": 4}'</span> <span class="at">--register</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Same steps as the notebook: view → split → fit → holdout → registry → CSV.</p>
+</div>
+<div id="tabset-1-3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode numberSource bash number-lines code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="" aria-label="1"></a><span class="ex">dalia/dalia.sh</span> submit <span class="at">--split</span> ood_density <span class="dt">\</span></span>
+<span id="cb4-2"><a href="" aria-label="2"></a>  <span class="at">--model-file</span> models/MO_DeepOnet.py</span>
+<span id="cb4-3"><a href="" aria-label="3"></a><span class="ex">dalia/dalia.sh</span> sweep dalia/sweeps/deeponet_ood.txt</span>
+<span id="cb4-4"><a href="" aria-label="4"></a><span class="ex">dalia/dalia.sh</span> hpo <span class="at">--study</span> deeponet_ood_v1</span>
+<span id="cb4-5"><a href="" aria-label="5"></a><span class="ex">dalia/dalia.sh</span> fetch</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>One job per GB200 GPU, in an Apptainer image; <code>--dry-run</code> prints it first.</p>
+</div>
+</div>
+</div>
+</div><div class="column" style="width:53%;">
+<div class="viz-card">
+<div class="viz-switch" data-for="hpo-chart">
+<button class="active" data-view="trials">
+Optuna trials
+</button>
+<button data-view="importance">
+What mattered
+</button>
+</div>
+<div id="hpo-chart" class="viz viz-md" data-viz="hpo" data-view="trials">
+
+</div>
+</div>
+<div class="caption">
+<p><code>hpo.py</code> on DALIA: <span data-kpi="hpo_trials"></span> TPE trials of MO_DeepOnet on 2 GPUs, scored on a validation cut of the training configurations (best <span data-kpi="hpo_best"></span>). The above-cut set is never seen; only the winner is retrained, scored once and registered.</p>
+</div>
+</div></div>
+</section>
+<section id="pipe-registry" class="slide level2">
+<h2>4 · A self-contained model registry</h2>
+<div class="columns">
+<div class="column" style="width:38%;">
+<ul class="file-tree">
+<li class="dir">
+sj_trajectory_bayesian_nn <em>v5</em>
+</li>
+<li title="The fitted SurrogateModel, target scaling included">
+<code>model.joblib</code><span>fitted model</span>
+</li>
+<li title="The models/*.py file it was built from">
+<code>bayesian_nn.py</code><span>model code</span>
+</li>
+<li title="Code needed to unpickle and predict">
+<code>pallas_pipeline.py</code><span>pipeline code</span>
+</li>
+<li title="The organisers' scorer, as used for the holdout">
+<code>pallas_score.py</code><span>scorer</span>
+</li>
+<li title="Versions installed when it was trained">
+<code>requirements.txt</code><span>pinned versions</span>
+</li>
+<li title="Case, inputs, normalisations, FV and TD versions, split, holdout configurations and scores">
+<code>model_meta.json</code><span>provenance</span>
+</li>
+</ul>
+<p><a href="index_files/images/Screenshot%202026-10-15%20at%2010.02.13.png" class="lightbox" data-gallery="quarto-lightbox-gallery-2"><img data-src="index_files/images/Screenshot%202026-10-15%20at%2010.02.13.png" class="lineage" alt="Hopsworks provenance graph linking a feature group, feature view, training dataset, and registered model"></a></p>
+<div class="caption">
+<p>Each version is linked to its feature view and training dataset, so anyone can load it and reproduce the exact inputs.</p>
+</div>
+</div><div class="column" style="width:59%;">
+<div class="kpi-row">
+<div>
+<b data-kpi="models"></b><span>versions</span>
+</div>
+<div>
+<b data-kpi="model_names"></b><span>models</span>
+</div>
+<div>
+<b data-kpi="authors"></b><span>authors</span>
+</div>
+<div>
+<b data-kpi="tasks"></b><span>cases</span>
+</div>
+</div>
+<div id="registry-chart" class="viz viz-md" data-viz="registry-growth">
+
+</div>
+<div class="caption">
+<p>Uploads to the team registry, hour by hour: per day, stacked by author, and per author. It plays on arrival; drag the slider or use Play/Pause, and hover a bar for its models.</p>
+</div>
+</div></div>
+</section>
+<section id="pipe-benchmark" class="slide level2">
+<h2>5 · Benchmark straight from the registry</h2>
+<div class="viz-card">
+<div class="viz-switch" data-for="benchmark-chart">
+<button class="active" data-view="trajectory">
+Trajectory
+</button>
+<button data-view="ood">
+OOD in density
+</button>
+<button data-view="direct_B">
+Direct B
+</button>
+<button data-view="inverse_A">
+Inverse A
+</button>
+<button data-view="inverse_B">
+Inverse B
+</button>
+<button data-view="moments">
+Moments
+</button>
+</div>
+<div id="benchmark-chart" class="viz viz-lg" data-viz="benchmark" data-view="trajectory">
+
+</div>
+</div>
+<div class="caption">
+<p><code>pp.model_benchmark(project, CASE)</code>: best version of each registered model against the bar; ★ = handed in (hover for per-target and official R²). Each author’s own holdout split: a guide, not a ranking.</p>
+</div>
+</section>
+<section id="pipe-status" class="slide level2">
+<h2>5 · The team status page</h2>
+<div class="status-bar">
+<p><span>Registry and W&amp;B in one page, rebuilt every 2 minutes as a Streamlit app inside Hopsworks (<code>status_app.py</code>). Below: the page as it was on <span data-kpi="built"></span>.</span> <a class="ext-link" data-link="hopsworks" target="_blank" rel="noopener" href="">Hopsworks ↗</a> <a class="ext-link" data-link="wandb" target="_blank" rel="noopener" href="">W&amp;B ↗</a></p>
+</div>
+<iframe class="status-frame" src="data/status.html" title="Plasma Pirates status page snapshot" loading="lazy">
+</iframe>
+</section>
+<section id="pipe-handin" class="slide level2">
+<h2>6 · Hand-in: export, score, publish</h2>
+<div class="columns">
+<div class="column" style="width:36%;">
+<ol class="flow">
+<li>
+<b><code>make_submission.py</code></b><span>loads the chosen version per case back from the registry and predicts the test file</span>
+</li>
+<li>
+<b>CSV + <code>manifest.json</code></b><span>checked against the test ids, fingerprinted with md5</span>
+</li>
+<li>
+<b>DALIA</b><span>the CSVs are copied to the organisers’ folder</span>
+</li>
+<li>
+<b>Organisers</b><span>run <code>pallas_score.py</code> on the hidden test</span>
+</li>
+<li>
+<b><code>log_official_score.py</code></b><span>transcribes their score to W&amp;B, <code>–dry-run</code> first</span>
+</li>
+<li>
+<b>Status page</b><span>matches the run to its registry version and updates itself</span>
+</li>
+</ol>
+</div><div class="column" style="width:61%;">
+<div class="viz-card">
+<div class="viz-switch" data-for="handin-chart">
+<button class="active" data-view="time">
+Official scores
+</button>
+<button data-view="calibration">
+Holdout vs official
+</button>
+<button data-view="manifest">
+Hand-in manifest
+</button>
+</div>
+<div id="handin-chart" class="viz viz-md" data-viz="handin" data-view="time">
+
+</div>
+</div>
+<div class="caption">
+<p><span data-kpi="official"></span> official scores on the hidden test, published to W&amp;B. Only the organisers compute them; our holdout only decides what to send.</p>
 </div>
 </div></div>
 </section>
@@ -402,15 +626,15 @@ Inverse A
 </div><div class="column" style="width:38%;">
 <h3 id="how-the-method-works">How the method works</h3>
 <p>For every numeric trajectory input and target, the explorer applies two complementary univariate tests:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="" aria-label="1"></a>q1, q3 <span class="op">=</span> values.quantile([<span class="fl">0.25</span>, <span class="fl">0.75</span>])</span>
-<span id="cb3-2"><a href="" aria-label="2"></a>iqr <span class="op">=</span> q3 <span class="op">-</span> q1</span>
-<span id="cb3-3"><a href="" aria-label="3"></a>iqr_flag <span class="op">=</span> (values <span class="op">&lt;</span> q1 <span class="op">-</span> <span class="fl">1.5</span> <span class="op">*</span> iqr) <span class="op">|</span> <span class="op">\</span></span>
-<span id="cb3-4"><a href="" aria-label="4"></a>           (values <span class="op">&gt;</span> q3 <span class="op">+</span> <span class="fl">1.5</span> <span class="op">*</span> iqr)</span>
-<span id="cb3-5"><a href="" aria-label="5"></a></span>
-<span id="cb3-6"><a href="" aria-label="6"></a>median <span class="op">=</span> values.median()</span>
-<span id="cb3-7"><a href="" aria-label="7"></a>MAD <span class="op">=</span> <span class="bu">abs</span>(values <span class="op">-</span> median).median()</span>
-<span id="cb3-8"><a href="" aria-label="8"></a>robust_z <span class="op">=</span> <span class="bu">abs</span>(values <span class="op">-</span> median) <span class="op">/</span> (<span class="fl">1.4826</span> <span class="op">*</span> MAD)</span>
-<span id="cb3-9"><a href="" aria-label="9"></a>robust_flag <span class="op">=</span> robust_z <span class="op">&gt;</span> <span class="fl">3.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="" aria-label="1"></a>q1, q3 <span class="op">=</span> values.quantile([<span class="fl">0.25</span>, <span class="fl">0.75</span>])</span>
+<span id="cb5-2"><a href="" aria-label="2"></a>iqr <span class="op">=</span> q3 <span class="op">-</span> q1</span>
+<span id="cb5-3"><a href="" aria-label="3"></a>iqr_flag <span class="op">=</span> (values <span class="op">&lt;</span> q1 <span class="op">-</span> <span class="fl">1.5</span> <span class="op">*</span> iqr) <span class="op">|</span> <span class="op">\</span></span>
+<span id="cb5-4"><a href="" aria-label="4"></a>           (values <span class="op">&gt;</span> q3 <span class="op">+</span> <span class="fl">1.5</span> <span class="op">*</span> iqr)</span>
+<span id="cb5-5"><a href="" aria-label="5"></a></span>
+<span id="cb5-6"><a href="" aria-label="6"></a>median <span class="op">=</span> values.median()</span>
+<span id="cb5-7"><a href="" aria-label="7"></a>MAD <span class="op">=</span> <span class="bu">abs</span>(values <span class="op">-</span> median).median()</span>
+<span id="cb5-8"><a href="" aria-label="8"></a>robust_z <span class="op">=</span> <span class="bu">abs</span>(values <span class="op">-</span> median) <span class="op">/</span> (<span class="fl">1.4826</span> <span class="op">*</span> MAD)</span>
+<span id="cb5-9"><a href="" aria-label="9"></a>robust_flag <span class="op">=</span> robust_z <span class="op">&gt;</span> <span class="fl">3.5</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The two flags are combined with an <strong>OR</strong>. A row becomes a candidate outlier when at least one selected feature is flagged. The method identifies candidates; it does not delete rows automatically.</p>
 </div></div>
 </section>
@@ -810,6 +1034,10 @@ Plasma Pirates
         });
       }
     </script>
+    <!-- Pipeline slides: Plotly, the data snapshot (build_pipeline_data.py) and the charts. -->
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <script src="data/pipeline_snapshot.js"></script>
+    <script src="pipeline.js"></script>
     <script id="quarto-html-after-body" type="application/javascript">
       window.document.addEventListener("DOMContentLoaded", function (event) {
         const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
@@ -978,6 +1206,38 @@ Plasma Pirates
         }
       });
       </script>
+    <script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+    (function() {
+      let previousOnload = window.onload;
+      window.onload = () => {
+        if (previousOnload) {
+          previousOnload();
+        }
+        lightboxQuarto.on('slide_before_load', (data) => {
+          const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+          const href = trigger.getAttribute('href');
+          if (href !== null) {
+            const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+            if (imgEl !== null) {
+              const srcAttr = imgEl.getAttribute("src");
+              if (srcAttr && srcAttr.startsWith("data:")) {
+                slideConfig.href = srcAttr;
+              }
+            }
+          } 
+        });
+      
+        lightboxQuarto.on('slide_after_load', (data) => {
+          const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(slideNode);
+          }
+        });
+      
+      };
+      
+    })();
+              </script>
     
 
 </body></html>

@@ -51,6 +51,20 @@ quarto render index.md
 
 The resulting HTML is self-contained enough to open or publish as a static deck.
 
+## Rebuild the pipeline data
+
+The pipeline slides (`sections/_05` to `_12`) draw their charts with `pipeline.js`
+from `data/pipeline_snapshot.js`, and embed `data/status.html`, a copy of the team
+status page. Both files are written by `build_pipeline_data.py`, which reads the
+Hopsworks feature store and model registry, the W&B runs of our group, the latest
+`submissions/best_*/manifest.json` and the HPO study in `outputs/hpo/`. Viewing the
+slides contacts neither service. To refresh the numbers before presenting, run this
+from the challenge folder with the team `.env` available:
+
+```bash
+../../../.venv/bin/python presentation/build_pipeline_data.py
+```
+
 ## Rebuild the static outlier histogram
 
 The outlier slide uses a local CSV/Plotly snapshot; it does not contact

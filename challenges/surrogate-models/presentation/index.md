@@ -16,7 +16,9 @@ format:
     margin: 0.05
     center: false
     footer: "AISSAI Hackathon 2026 · Plasma Pirates"
-    include-after-body: _afterbody.html
+    include-after-body:
+      - _afterbody.html
+      - _pipeline.html
 execute:
   echo: false
   eval: false
@@ -32,22 +34,34 @@ execute:
 
 {{< include sections/_04-data-exploration.md >}}
 
-{{< include sections/_05-read-hopsworks.md >}}
+{{< include sections/_05-pipeline-overview.md >}}
 
-{{< include sections/_06-train-register.md >}}
+{{< include sections/_06-pipeline-feature-store.md >}}
 
-{{< include sections/_07-modelling-directions.md >}}
+{{< include sections/_07-pipeline-transformations.md >}}
 
-{{< include sections/_08-data-quality.md >}}
+{{< include sections/_08-pipeline-training.md >}}
 
-{{< include sections/_09-trajectory-outliers.md >}}
+{{< include sections/_09-pipeline-registry.md >}}
 
-{{< include sections/_10-plotly-scatter.md >}}
+{{< include sections/_10-pipeline-benchmark.md >}}
 
-{{< include sections/_11-model-experiments.md >}}
+{{< include sections/_11-pipeline-status.md >}}
 
-{{< include sections/_12-results.md >}}
+{{< include sections/_12-pipeline-handin.md >}}
 
-{{< include sections/_13-takeaways.md >}}
+{{< include sections/_13-modelling-directions.md >}}
 
-{{< include sections/_14-questions.md >}}
+{{< include sections/_14-data-quality.md >}}
+
+{{< include sections/_15-trajectory-outliers.md >}}
+
+{{< include sections/_16-plotly-scatter.md >}}
+
+{{< include sections/_17-model-experiments.md >}}
+
+{{< include sections/_18-results.md >}}
+
+{{< include sections/_19-takeaways.md >}}
+
+{{< include sections/_20-questions.md >}}
