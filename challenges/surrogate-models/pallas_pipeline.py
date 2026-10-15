@@ -457,8 +457,12 @@ def model_benchmark(project, case_name):
     return table.sort_values("mean_r2", ascending=False, na_position="last").reset_index(drop=True)
 
 
-def load_registered_model(project, name, version, out_dir):
-    """(model, meta) downloaded from the registry, ready to predict."""
+def load_registered_model(project, name, version, out_dir, own_code=False):
+    """(model, meta) downloaded from the registry, ready to predict.
+
+    own_code: always import the bundle's model file, even when a module of that name is already
+    loaded (several models in one session); helper modules of the bundle become importable too.
+    """
     import joblib
     entry = project.get_model_registry().get_model(name, version=version)
     if entry is None:
@@ -469,7 +473,9 @@ def load_registered_model(project, name, version, out_dir):
     target.mkdir(parents=True)
     folder = Path(entry.download(local_path=str(target)))
     meta = json.loads((folder / "model_meta.json").read_text())
-    if meta["model_file"] not in sys.modules:   # the model's own code, for unpickling
+    if own_code:
+        sys.path.append(str(folder))
+    if own_code or meta["model_file"] not in sys.modules:   # the model's code, for unpickling
         load_model_file(folder / f"{meta['model_file']}.py")
     return joblib.load(folder / "model.joblib"), meta
 
