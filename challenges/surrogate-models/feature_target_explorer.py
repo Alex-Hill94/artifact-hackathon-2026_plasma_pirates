@@ -15,8 +15,8 @@ Examples::
 
     .venv/bin/python data_explorer.py --case trajectory
     .venv/bin/python data_explorer.py --case inverse_B --all-rows
-    .venv/bin/python data_explorer.py --case direct_B --max-points 5000
-    .venv/bin/streamlit run data_explorer.py
+    .venv/bin/python feature_target_explorer.py --case direct_B --max-points 5000
+    .venv/bin/streamlit run feature_target_explorer.py -- --case trajectory
 """
 
 from __future__ import annotations
@@ -32,6 +32,8 @@ import pandas as pd
 
 import pallas_pipeline as pp
 
+DEFAULT_MAX_PLOT_ROWS = 50_000
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -43,11 +45,52 @@ def parse_args() -> argparse.Namespace:
                         help="Explore all feature-group rows instead of the case's modeling filter.")
     parser.add_argument("--max-points", type=int, default=5000,
                         help="Maximum rows used in interactive scatter plots.")
+    parser.add_argument("--max-plot-rows", type=int, default=DEFAULT_MAX_PLOT_ROWS,
+                        help="Maximum rows sent to interactive Plotly figures. Full data is "
+                             "still used for statistics and outlier counts.")
     parser.add_argument("--top-outliers", type=int, default=100,
                         help="Number of candidate outlier rows to save in the report.")
     parser.add_argument("--no-open", action="store_true",
                         help="Do not try to open the generated HTML report.")
     return parser.parse_args()
+
+
+def downsample_for_plots(frame: pd.DataFrame, case: pp.Case, max_rows: int,
+                         random_state: int = 0) -> pd.DataFrame:
+    """Return a bounded plotting frame without breaking trajectory configs.
+
+    A trajectory is sampled by whole ``config`` groups so a plotted line is not
+    silently truncated halfway through a configuration. Non-trajectory cases
+    use a reproducible row sample. The original frame and its index are kept so
+    the corresponding outlier flags can be selected without recomputation.
+    """
+    if max_rows <= 0:
+        raise ValueError("max_plot_rows must be positive")
+    if len(frame) <= max_rows:
+        return frame
+
+    if case.positional and "config" in frame:
+        group_sizes = frame.groupby("config", sort=False).size()
+        configs = group_sizes.sample(frac=1, random_state=random_state)
+        selected_configs: list[object] = []
+        selected_rows = 0
+        for config, group_size in configs.items():
+            if not selected_configs and int(group_size) > max_rows:
+                # Preserve the hard browser-side cap even when one config is
+                # larger than the requested plotting budget.
+                return frame[frame["config"] == config].sample(
+                    max_rows, random_state=random_state
+                )
+            if selected_configs and selected_rows + int(group_size) > max_rows:
+                continue
+            selected_configs.append(config)
+            selected_rows += int(group_size)
+            if selected_rows >= max_rows:
+                break
+        if selected_configs:
+            return frame[frame["config"].isin(selected_configs)]
+
+    return frame.sample(max_rows, random_state=random_state)
 
 
 def load_case_rows(fs, case: pp.Case, all_rows: bool) -> pd.DataFrame:
@@ -451,6 +494,17 @@ def analyse_case(fs, case: pp.Case, all_rows: bool):
     return frame, columns, stats, pearson, spearman, row_flags, feature_outliers
 
 
+def _cached_case_analysis(st, case_name: str, all_rows: bool):
+    """Cache the expensive Hopsworks read and full-data analysis in Streamlit."""
+    @st.cache_data(show_spinner=False, ttl=3600)
+    def _read_and_analyse(selected_case: str, include_all_rows: bool):
+        project = pp.connect(pp.PROJECT)
+        fs = project.get_feature_store()
+        return analyse_case(fs, pp.CASES[selected_case], include_all_rows)
+
+    return _read_and_analyse(case_name, all_rows)
+
+
 def streamlit_app() -> None:
     """Render the interactive browser UI when launched with Streamlit."""
     import streamlit as st
@@ -466,6 +520,11 @@ def streamlit_app() -> None:
         case_name = st.selectbox("Case", sorted(pp.CASES))
         all_rows = st.checkbox("Include all feature-group rows", value=False)
         max_points = st.slider("Scatter points", 500, 20_000, 5_000, step=500)
+        max_plot_rows = st.slider(
+            "Rows used in plots", 5_000, 100_000, DEFAULT_MAX_PLOT_ROWS, step=5_000,
+            help="Large datasets remain fully available for statistics, while Plotly receives "
+                 "a bounded sample to keep the browser responsive.",
+        )
         population = st.selectbox(
             "Outlier population",
             ["All rows", "Non-outliers", "Candidate outliers"],
@@ -478,14 +537,22 @@ def streamlit_app() -> None:
             st.info("Stopping the local Streamlit server...")
             os.kill(os.getpid(), signal.SIGTERM)
 
-    project = pp.connect(pp.PROJECT)
-    fs = project.get_feature_store()
     case = pp.CASES[case_name]
     with st.spinner(f"Loading and analysing {case_name} from Hopsworks..."):
-        frame, columns, stats, pearson, spearman, row_flags, feature_outliers = analyse_case(
-            fs, case, all_rows
+        frame, columns, stats, pearson, spearman, row_flags, feature_outliers = _cached_case_analysis(
+            st, case_name, all_rows
         )
-        figures = plotly_figures(frame, columns, row_flags, pearson, spearman, max_points, case)
+        plot_frame = downsample_for_plots(frame, case, max_plot_rows)
+        plot_flags = row_flags.loc[plot_frame.index]
+        figures = plotly_figures(
+            plot_frame, columns, plot_flags, pearson, spearman, max_points, case
+        )
+
+    if len(plot_frame) < len(frame):
+        st.info(
+            f"Loaded {len(frame):,} rows. Interactive figures use a reproducible sample of "
+            f"{len(plot_frame):,} rows; statistics and outlier counts use all rows."
+        )
 
     selected_mask = {
         "All rows": pd.Series(True, index=frame.index),
@@ -554,7 +621,9 @@ def streamlit_app() -> None:
             mime="text/csv",
         )
         st.subheader("Selected population distribution")
-        selected_long = display_frame.loc[selected_mask, columns].melt(
+        selected_long = display_frame.loc[selected_mask, columns].sample(
+            min(int(selected_mask.sum()), max_plot_rows), random_state=0
+        ).melt(
             var_name="feature", value_name="value"
         )
         st.plotly_chart(px.box(selected_long, x="feature", y="value", points=False),
@@ -582,7 +651,11 @@ def main() -> None:
     stats = descriptive_statistics(frame, columns)
     pearson, spearman = correlations(frame, columns)
     row_flags, feature_outliers = flag_outliers(frame, columns)
-    figures = plotly_figures(frame, columns, row_flags, pearson, spearman, args.max_points, case)
+    plot_frame = downsample_for_plots(frame, case, args.max_plot_rows)
+    plot_flags = row_flags.loc[plot_frame.index]
+    figures = plotly_figures(
+        plot_frame, columns, plot_flags, pearson, spearman, args.max_points, case
+    )
 
     output_dir = args.output_dir / args.case
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -596,6 +669,8 @@ def main() -> None:
     write_report(output_dir / "report.html", args.case, frame, stats, feature_outliers, figures)
 
     print(f"explored {args.case}: {len(frame):,} rows, {len(columns)} numeric features")
+    if len(plot_frame) < len(frame):
+        print(f"interactive figures: sampled {len(plot_frame):,} rows for plotting")
     print(f"candidate outlier rows: {int(row_flags['candidate_outlier'].sum()):,}")
     print(f"report: {output_dir / 'report.html'}")
 

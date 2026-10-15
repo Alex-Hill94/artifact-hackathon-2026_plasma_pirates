@@ -57,8 +57,8 @@ $line: rgba(165, 243, 252, 0.22);
 }
 
 .reveal #title-slide h1 {
-  width: 52%;
-  max-width: 650px;
+  width: 72%;
+  max-width: 900px;
   color: white;
   border-left: 0.12em solid $fuchsia;
   padding-left: 0.35em;
@@ -70,8 +70,8 @@ $line: rgba(165, 243, 252, 0.22);
 .reveal #title-slide .date,
 .reveal #title-slide .quarto-title-authors {
   color: $muted;
-  width: 50%;
-  max-width: 625px;
+  width: 68%;
+  max-width: 850px;
   margin-left: 0.45em;
 }
 
@@ -80,14 +80,15 @@ $line: rgba(165, 243, 252, 0.22);
 
 .title-artwork-frame {
   position: absolute;
-  right: 3%;
-  bottom: 18%;
-  width: 40%;
-  height: 64%;
-  overflow: visible;
+  right: 4%;
+  bottom: 5%;
+  width: 7.5em;
+  height: 7.5em;
+  overflow: hidden;
   border: 1px solid rgba(232, 121, 249, 0.45);
-  border-radius: 0.45em;
-  box-shadow: 0 0 2.5em rgba(232, 121, 249, 0.18);
+  border-radius: 50%;
+  background: rgba(8, 20, 32, 0.88);
+  box-shadow: 0 0 1.6em rgba(232, 121, 249, 0.2);
 }
 
 .title-artwork {
@@ -121,6 +122,12 @@ $line: rgba(165, 243, 252, 0.22);
 }
 
 .placeholder.tall { min-height: 8em; margin-top: 0.7em; }
+.video-frame { display: block; width: 100%; aspect-ratio: 16 / 9; margin-top: 0.7em; border: 1px solid $line; border-radius: 0.35em; background: #000; }
+.video-feature { height: 74vh; max-height: calc(100vh - 4.2em); aspect-ratio: auto; margin-top: 0.15em; }
+.plotly-frame { display: block; width: 100%; border: 1px solid $line; border-radius: 0.35em; background: transparent; }
+.outlier-histogram-frame { height: 19em; }
+.video-fallback { min-height: 7em; margin-top: 0.7em; padding: 1.1em; border: 1px dashed $line; border-radius: 0.35em; background: rgba(19, 40, 59, 0.72); color: $muted; font-size: 0.62em; text-align: center; }
+.video-fallback a { color: $fuchsia-soft; }
 .hero-placeholder { min-height: 10em; font-size: 0.85em; }
 .benchmark-placeholder { min-height: 10em; font-size: 0.85em; }
 .result-placeholder { min-height: 5em; margin-top: 0.8em; }

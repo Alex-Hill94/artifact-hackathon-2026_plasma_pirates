@@ -16,4 +16,41 @@
     artworkFrame.appendChild(artwork);
     titleSlide.appendChild(artworkFrame);
   }
+
+  const videoFrames = document.querySelectorAll('.video-frame');
+  if (videoFrames.length && typeof Reveal !== 'undefined') {
+    videoFrames.forEach((videoFrame) => {
+      const videoSlide = videoFrame.closest('section');
+      if (!videoSlide) return;
+
+      if (window.location.protocol === 'file:') {
+        videoFrame.hidden = true;
+        const fallback = document.createElement('div');
+        fallback.className = 'video-fallback';
+        const videoUrl = videoFrame.dataset.videoUrl || videoFrame.src;
+        fallback.innerHTML = 'Embedded YouTube playback requires <code>quarto preview</code>. '
+          + `<a href="${videoUrl}" target="_blank" rel="noopener">`
+          + 'Open the video on YouTube</a>.';
+        videoFrame.parentElement.appendChild(fallback);
+      }
+
+      const playVideoOnEntry = (event) => {
+        if (event.currentSlide === videoSlide && window.location.protocol !== 'file:') {
+          // Reload the muted player on entry so playback starts with the slide.
+          const autoplaySrc = videoFrame.dataset.autoplaySrc;
+          if (autoplaySrc) {
+            videoFrame.src = `${autoplaySrc}&session=${Date.now()}`;
+          }
+        } else {
+          videoFrame.contentWindow?.postMessage(
+            JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*'
+          );
+        }
+      };
+      Reveal.on('slidechanged', playVideoOnEntry);
+      if (Reveal.getCurrentSlide() === videoSlide) {
+        playVideoOnEntry({currentSlide: videoSlide});
+      }
+    });
+  }
 </script>

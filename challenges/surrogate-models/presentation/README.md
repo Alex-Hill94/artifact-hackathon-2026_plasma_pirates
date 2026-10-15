@@ -34,3 +34,16 @@ quarto render presentation/index.md --to revealjs
 ```
 
 The resulting HTML is self-contained enough to open or publish as a static deck.
+
+## Rebuild the static outlier histogram
+
+The outlier slide uses a local CSV/Plotly snapshot; it does not contact
+Hopsworks when the presentation is viewed. To refresh that snapshot, run this
+from the repository root with the usual Hopsworks credentials available:
+
+```bash
+.venv/bin/python presentation/build_outlier_histogram.py --max-rows 50000
+```
+
+This writes `presentation/data/trajectory_histogram_snapshot.csv` and
+`presentation/data/trajectory_histograms.html`.

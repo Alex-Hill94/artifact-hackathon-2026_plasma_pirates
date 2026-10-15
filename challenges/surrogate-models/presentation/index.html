@@ -101,7 +101,7 @@
     code span.vs { color: #20794d; } /* VerbatimString */
     code span.wa { color: #5e5e5e; font-style: italic; } /* Warning */
   </style>
-  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-7228362f5e22fcb1cef89eb3bc164c78.css">
+  <link rel="stylesheet" href="index_files/libs/revealjs/dist/theme/quarto-21f1d7420090fdf51a76b50bea86f7b5.css">
   <link href="index_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="index_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="index_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -210,8 +210,8 @@ Hayg Guler · Alexander Hill · Sébastien Joly · Keon Hee Kim · Mykyta Lenive
 </div>
 
 </section>
-<section id="why-surrogate-models" class="slide level2">
-<h2>Why surrogate models?</h2>
+<section id="why-do-we-need-surrogate-models" class="slide level2">
+<h2>Why do we need surrogate models?</h2>
 <div class="columns">
 <div class="column" style="width:52%;">
 <h3 id="the-scientific-problem">The scientific problem</h3>
@@ -224,9 +224,8 @@ Hayg Guler · Alexander Hill · Sébastien Joly · Keon Hee Kim · Mykyta Lenive
 <p><strong>Central idea</strong></p>
 <p>Replace repeated high-fidelity simulation runs with a fast, validated approximation.</p>
 </div>
-<div class="placeholder tall">
-<p>Insert a simple visual or headline statistic.</p>
-</div>
+<iframe class="video-frame" src="https://www.youtube-nocookie.com/embed/xH0mQ93MpMc?autoplay=0&amp;mute=1&amp;enablejsapi=1&amp;playsinline=1&amp;rel=0" data-autoplay-src="https://www.youtube-nocookie.com/embed/xH0mQ93MpMc?autoplay=1&amp;mute=1&amp;enablejsapi=1&amp;playsinline=1&amp;rel=0" title="PALLAS simulation video" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="">
+</iframe>
 </div></div>
 </section>
 <section id="pallas-in-one-view" class="slide level2">
@@ -284,6 +283,11 @@ Surrogate model</p>
           overflow: hidden!important;
           display:block!important;
       }</style></aside>
+</section>
+<section id="data-exploration" class="slide level2">
+<h2>Data exploration</h2>
+<iframe class="video-frame video-feature" src="https://www.youtube-nocookie.com/embed/Bx12V2A3MlQ?autoplay=0&amp;mute=1&amp;enablejsapi=1&amp;playsinline=1&amp;rel=0" data-autoplay-src="https://www.youtube-nocookie.com/embed/Bx12V2A3MlQ?autoplay=1&amp;mute=1&amp;enablejsapi=1&amp;playsinline=1&amp;rel=0" data-video-url="https://youtu.be/Bx12V2A3MlQ" title="PALLAS data exploration demo" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen="">
+</iframe>
 </section>
 <section id="read-the-simulation-data-from-hopsworks" class="slide level2">
 <h2>1 · Read the simulation data from Hopsworks</h2>
@@ -390,12 +394,13 @@ Inverse A
 <h2>Identifying possible outliers in trajectories</h2>
 <div class="columns">
 <div class="column" style="width:58%;">
-<p><img data-src="index_files/images/feature-histograms-by-population-pos-outliers.png" style="width:92.0%" alt="Feature histograms comparing non-outlier and candidate-outlier trajectory rows"></p>
+<iframe class="plotly-frame outlier-histogram-frame" src="data/trajectory_histograms.html" title="Interactive trajectory feature histograms" loading="lazy">
+</iframe>
 <div class="caption">
-<p>Trajectory feature distributions split into non-outlier rows and candidate outlier rows.</p>
+<p>Static Hopsworks snapshot: use the dropdown to inspect one trajectory feature at a time.</p>
 </div>
 </div><div class="column" style="width:38%;">
-<h3 id="what-the-explorer-does">What the explorer does</h3>
+<h3 id="how-the-method-works">How the method works</h3>
 <p>For every numeric trajectory input and target, the explorer applies two complementary univariate tests:</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode numberSource python number-lines code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="" aria-label="1"></a>q1, q3 <span class="op">=</span> values.quantile([<span class="fl">0.25</span>, <span class="fl">0.75</span>])</span>
 <span id="cb3-2"><a href="" aria-label="2"></a>iqr <span class="op">=</span> q3 <span class="op">-</span> q1</span>
@@ -766,6 +771,43 @@ Plasma Pirates
         artwork.alt = 'Plasma Pirates crew with a dragon under the moon';
         artworkFrame.appendChild(artwork);
         titleSlide.appendChild(artworkFrame);
+      }
+
+      const videoFrames = document.querySelectorAll('.video-frame');
+      if (videoFrames.length && typeof Reveal !== 'undefined') {
+        videoFrames.forEach((videoFrame) => {
+          const videoSlide = videoFrame.closest('section');
+          if (!videoSlide) return;
+
+          if (window.location.protocol === 'file:') {
+            videoFrame.hidden = true;
+            const fallback = document.createElement('div');
+            fallback.className = 'video-fallback';
+            const videoUrl = videoFrame.dataset.videoUrl || videoFrame.src;
+            fallback.innerHTML = 'Embedded YouTube playback requires <code>quarto preview</code>. '
+              + `<a href="${videoUrl}" target="_blank" rel="noopener">`
+              + 'Open the video on YouTube</a>.';
+            videoFrame.parentElement.appendChild(fallback);
+          }
+
+          const playVideoOnEntry = (event) => {
+            if (event.currentSlide === videoSlide && window.location.protocol !== 'file:') {
+              // Reload the muted player on entry so playback starts with the slide.
+              const autoplaySrc = videoFrame.dataset.autoplaySrc;
+              if (autoplaySrc) {
+                videoFrame.src = `${autoplaySrc}&session=${Date.now()}`;
+              }
+            } else {
+              videoFrame.contentWindow?.postMessage(
+                JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*'
+              );
+            }
+          };
+          Reveal.on('slidechanged', playVideoOnEntry);
+          if (Reveal.getCurrentSlide() === videoSlide) {
+            playVideoOnEntry({currentSlide: videoSlide});
+          }
+        });
       }
     </script>
     <script id="quarto-html-after-body" type="application/javascript">
