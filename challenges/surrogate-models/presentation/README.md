@@ -19,18 +19,34 @@ scatter plot: it uses Plotly.js from the CDN. Python and the packages in
 `requirements.txt` are useful if you want to generate additional Plotly figures
 or replace the dummy data with a data-driven workflow.
 
+## Structure
+
+Each slide lives in its own file under `sections/` (`_01-why-surrogates.md`,
+`_02-pallas-overview.md`, …). `index.md` only holds the deck's front matter and
+pulls the slides in, in order, with `{{< include sections/... >}}`. To add,
+remove, or reorder slides, edit the include list in `index.md`. The leading `_`
+keeps Quarto from rendering a section file on its own. Image and data paths
+inside a section are relative to this directory, because the content is inlined
+into `index.md`.
+
 ## Render locally
 
-From the repository root:
+From this directory:
 
 ```bash
-quarto preview presentation/index.md
+./preview.sh
 ```
 
-To create a static HTML file:
+This serves the deck at <http://localhost:4848/> (override with `PORT=...`)
+and reloads it on every save. The script is needed because `quarto preview`
+does not watch included files: it re-renders the deck whenever something in
+`sections/` changes. Embedded YouTube videos and Plotly only work when the
+deck is served over HTTP like this, not when `index.html` is opened directly.
+
+To create the static HTML file:
 
 ```bash
-quarto render presentation/index.md --to revealjs
+quarto render index.md
 ```
 
 The resulting HTML is self-contained enough to open or publish as a static deck.
